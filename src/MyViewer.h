@@ -14,6 +14,7 @@
 #include <QOpenGLFunctions_3_0>
 #include <QOpenGLFunctions>
 #include <QGLViewer/qglviewer.h>
+#include <QGLFramebufferObject>
 
 #include <gl/GLUtilityMethods.h>
 
@@ -129,6 +130,7 @@ public :
         //
         setSceneCenter( qglviewer::Vec( 0 , 0 , 0 ) );
         setSceneRadius( 10.f );
+
         showEntireScene();
     }
 
@@ -139,8 +141,7 @@ public :
         text += "<h3>Participants</h3>";
         text += "<ul>";
         text += "<li>jmt</li>";
-        text += "<li>nvh</li>";
-        text += "<li>hulien</li>";
+        text += "<li>...</li>";
         text += "</ul>";
         text += "<h3>Basics</h3>";
         text += "<p>";
@@ -188,6 +189,7 @@ public :
             return;
         }
 
+
         QGLViewer::mouseDoubleClickEvent( e );
     }
 
@@ -214,15 +216,25 @@ public slots:
             if(fileName.endsWith(QString(".off")))
                 success = OFFIO::openTriMesh(fileName.toStdString() , mesh.vertices , mesh.triangles );
             else if(fileName.endsWith(QString(".obj")))
-                success = OBJIO::openTriMesh(fileName.toStdString() , mesh.vertices , mesh.triangles );
+                success = OBJIO::openTriMesh(fileName.toStdString() , mesh.vertices , mesh.triangles , mesh.textcoords , mesh.triangles_text );
             if(success) {
                 std::cout << fileName.toStdString() << " was opened successfully" << std::endl;
+
+                // test:
+                {
+                    mesh.triangles = mesh.triangles_text;
+                    for( unsigned int v = 0 ; v < mesh.textcoords.size() ; ++v ) {
+                        mesh.vertices[v].p = point3d( mesh.textcoords[v][0] , mesh.textcoords[v][1] , 0.0 );
+                    }
+                }
+
                 point3d bb(FLT_MAX,FLT_MAX,FLT_MAX) , BB(-FLT_MAX,-FLT_MAX,-FLT_MAX);
                 for( unsigned int v = 0 ; v < mesh.vertices.size() ; ++v ) {
                     bb = point3d::min(bb , mesh.vertices[v]);
                     BB = point3d::max(BB , mesh.vertices[v]);
                 }
                 adjustCamera(bb,BB);
+                renderGeometry(100, 100);
                 update();
             }
             else
@@ -315,6 +327,75 @@ public slots:
             saveCameraInFile( fileName+QString(".cam") );
         }
     }
+
+    void renderGeometry(int wbuffer, int hbuffer)
+        {
+            QGLFramebufferObject * _framebuffer = new QGLFramebufferObject(QSize(wbuffer , hbuffer), QGLFramebufferObject::Depth);
+
+            _framebuffer->bind();
+
+            glViewport(0, 0, _framebuffer->width(), _framebuffer->height());
+
+            glPushAttrib( GL_LIGHTING_BIT | GL_COLOR_BUFFER_BIT );
+            glPushAttrib(GL_COLOR_BUFFER_BIT | GL_VIEWPORT_BIT | GL_ENABLE_BIT);
+            glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+
+            glDisable(GL_BLEND);
+            glDisable(GL_LIGHTING);
+            glShadeModel(GL_FLAT);
+            glEnable(GL_DEPTH);
+
+            float back[4];
+            glGetFloatv( GL_COLOR_CLEAR_VALUE , back );
+
+            glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            // SETUP THE CAMERA TO DRAW "IN 2D", AND DRAW VALUES:
+            {
+                glPolygonMode( GL_FRONT_AND_BACK , GL_FILL );
+
+                glMatrixMode( GL_PROJECTION );
+                glPushMatrix();
+                glLoadIdentity();
+                glOrtho( 0.f , 1.f , 0.f , 1.f , -1.f , 1.f );
+                glMatrixMode( GL_MODELVIEW );
+                glPushMatrix();
+                glLoadIdentity();
+
+                // DRAW UV TRIANGLES:
+                {
+                }
+
+
+                glPopMatrix();
+                glMatrixMode( GL_PROJECTION );
+                glPopMatrix();
+                glMatrixMode( GL_MODELVIEW );
+            }
+
+            // TO READ THE VALUES :
+            {
+                int x = 0 , y = 0;
+
+                GLubyte data[4];
+                glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+                int index = ((data[0] << 16) + (data[1] << 8) + data[2]);
+
+                // do we have geometry under the mouse or not: if it's index is FFFFFF, it means we pick up
+                // the clear color.
+                bool xyHasGeometry = !(index == 0xFFFFFF);
+            }
+
+
+            glClearColor(back[0], back[1], back[2], back[3]);
+            glPopAttrib();
+
+            _framebuffer->release();
+            delete _framebuffer;
+        }
+
+
 };
 
 

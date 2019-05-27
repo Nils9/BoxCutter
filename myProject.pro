@@ -14,10 +14,17 @@ HEADERS += ./src/point3.h \
     ./src/Mesh.h \
     ./src/MyViewer.h \
     ./src/gl/GLUtilityMethods.h \
-    ./src/gl/BasicColors.h
+    ./src/gl/BasicColors.h \
+    bcutter.h \
+    src/point2.h \
+    packingtree.h \
+    node.h
 SOURCES += ./src/main.cpp \
     ./src/gl/GLUtilityMethods.cpp\
-    ./src/gl/BasicColors.cpp
+    ./src/gl/BasicColors.cpp \
+    bcutter.cpp \
+    packingtree.cpp \
+    node.cpp
 
 
 

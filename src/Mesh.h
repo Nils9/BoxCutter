@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "point3.h"
+#include "point2.h"
 
 
 
@@ -13,6 +14,12 @@ struct Vertex{
     double & operator [] (unsigned int c) { return p[c]; }
     double operator [] (unsigned int c) const { return p[c]; }
 };
+struct uvCoord{
+    point2d uv;
+    uvCoord(double x , double y ) : uv(x,y) {}
+    double & operator [] (unsigned int c) { return uv[c]; }
+    double operator [] (unsigned int c) const { return uv[c]; }
+};
 struct Triangle{
     unsigned int corners[3];
     unsigned int & operator [] (unsigned int c) { return corners[c]; }
@@ -22,6 +29,8 @@ struct Triangle{
 struct Mesh{
     std::vector< Vertex > vertices;
     std::vector< Triangle > triangles;
+    std::vector< uvCoord > textcoords;
+    std::vector< Triangle > triangles_text;
 };
 
 

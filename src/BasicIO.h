@@ -250,6 +250,107 @@ template< class point_t , class tri_t > bool openTriMesh(
 
 
 
+
+template< class point_t , class text_coord_t , class tri_t > bool openTriMesh(
+        const std::string & filename,
+        std::vector< point_t > & vertices,
+        std::vector< tri_t > & faces,
+        std::vector< text_coord_t > & uvs,
+        std::vector< tri_t > & faces_uvs,
+        bool randomize = false)
+{
+    std::ifstream myfile;
+    myfile.open(filename.c_str());
+    if (!myfile.is_open())
+    {
+        std::cout << filename << " cannot be opened" << std::endl;
+        return false;
+    }
+
+    vertices.clear();
+    faces.clear();
+
+    while( myfile.good() )
+    {
+        std::string line;
+        getline (myfile,line);
+        QString QTLine = QString::fromStdString( line );
+        QRegExp reg("\\s+");
+        QStringList lineElements = QTLine.split(reg);
+
+        if(  lineElements.size() > 0  )
+        {
+            QString elementType = lineElements[0];
+            // vertex
+            if ( elementType == QString("v") )
+            {
+                vertices.push_back(point_t( lineElements[1].toDouble() , lineElements[2].toDouble() , lineElements[3].toDouble() ));
+            }
+            else if ( elementType == QString("vt") )
+            {
+                uvs.push_back(text_coord_t( lineElements[1].toDouble() , lineElements[2].toDouble() ));
+            }
+            // face
+            else if ( elementType == QString("f") )
+            {
+                std::vector< unsigned int > vhandles;
+                std::vector< unsigned int > uvcoords_handles;
+                for( int i = 1 ; i < lineElements.size() ; ++i )
+                {
+                    QStringList FaceElements = lineElements[i].split("/", QString::KeepEmptyParts);
+                    if( FaceElements.size() > 0 )
+                        vhandles.push_back( (unsigned int)( (abs(FaceElements[0].toInt()) - 1) ) );
+                    if( FaceElements.size() > 1 ) {
+                        uvcoords_handles.push_back( (unsigned int)( (abs(FaceElements[1].toInt()) - 1) ) );
+                    }
+                }
+
+                if (vhandles.size()>3)
+                {
+                    // convert to triangles :
+                    {
+                        //model is not triangulated, so let us do this on the fly...
+                        //to have a more uniform mesh, we add randomization
+                        unsigned int k=(randomize)?(rand()%vhandles.size()):0;
+                        for (unsigned int i=0;i<vhandles.size()-2;++i)
+                        {
+                            tri_t tri;
+                            tri[0] = vhandles[(k+0)%vhandles.size()];
+                            tri[1] = vhandles[(k+i+1)%vhandles.size()];
+                            tri[2] = vhandles[(k+i+2)%vhandles.size()];
+                            faces.push_back(tri);
+
+                            tri_t uvtri;
+                            uvtri[0] = uvcoords_handles[(k+0)%vhandles.size()];
+                            uvtri[1] = uvcoords_handles[(k+i+1)%vhandles.size()];
+                            uvtri[2] = uvcoords_handles[(k+i+2)%vhandles.size()];
+                            faces_uvs.push_back(uvtri);
+                        }
+                    }
+                }
+                else if (vhandles.size()==3)
+                {
+                    tri_t tri;
+                    tri[0]= vhandles[0];
+                    tri[1]= vhandles[1];
+                    tri[2]= vhandles[2];
+                    faces.push_back(tri);
+
+                    tri_t uvtri;
+                    uvtri[0]= uvcoords_handles[0];
+                    uvtri[1]= uvcoords_handles[1];
+                    uvtri[2]= uvcoords_handles[2];
+                    faces_uvs.push_back(uvtri);
+                }
+            }
+        }
+    }
+    myfile.close();
+    return true;
+}
+
+
+
 template< class point_t , typename face_t > bool save(
         std::string const & filename,
         std::vector< point_t > & verticesP,

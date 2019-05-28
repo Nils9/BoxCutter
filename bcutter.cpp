@@ -62,7 +62,7 @@
 //    return cuts;
 //}
 
-//std::vector<std::vector<int>> Bcutter::optimizedCuts(std::vector<std::vector<int> > cuts){
+//std::vector<std::vector<int>> Bcutter::optimizedCuts(std::vector<std::vector<int>> cuts){
 //    std::vector<std::vector<int>> optimizedCuts;
 //    for(int i = 0; i < cuts.size(); i++){
 //        std::vector<int> currentCut = optimizedCuts[i];

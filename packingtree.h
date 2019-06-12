@@ -2,15 +2,20 @@
 #define PACKINGTREE_H
 #include "node.h"
 #include <vector>
+#include <iostream>
 
 class PackingTree
 {
 public:
-    PackingTree();
+    PackingTree(int h, int w);
+    std::vector<int> place(std::vector<int> size);
+    std::vector<Node*> getAvailableSpace();
+    void setAvailableSpace(std::vector<Node*> space);
 
 private:
-    std::vector<Node> availableSpace;
-    std::vector<std::vector<int>> alreadyStored;
+    int width;
+    int height;
+    std::vector<Node*> availableSpace;
 };
 
 #endif // PACKINGTREE_H

@@ -289,6 +289,7 @@ template< class point_t , class text_coord_t , class tri_t > bool openTriMesh(
             else if ( elementType == QString("vt") )
             {
                 uvs.push_back(text_coord_t( lineElements[1].toDouble() , lineElements[2].toDouble() ));
+		
             }
             // face
             else if ( elementType == QString("f") )

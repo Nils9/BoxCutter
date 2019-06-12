@@ -29,5 +29,6 @@ int main( int argc , char** argv )
     mainWindow->setWindowIcon(QIcon("img/icons/icon.png"));
     mainWindow->show();
 
+
     return app.exec();
 }

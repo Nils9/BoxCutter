@@ -36,6 +36,7 @@ struct Mesh{
     std::vector<std::vector<int>> neighbours;
     std::vector<std::vector<int>> charts;
     std::vector<std::vector<Triangle>> chartsTriangles;
+    std::vector<std::vector<Triangle>> chartsTriangles3D;
     std::vector<std::vector<double>> chartsBoundingBoxes;
     std::vector<int> chartOfVertex;
     void updateNeighbours(){

@@ -938,6 +938,19 @@ public slots:
 
                 renderGeometry(500, 500, 1000);
                 computeMeshTextCharts();
+                /*for(int i = 0; i<mesh.triangles.size(); i++){
+                    if(mesh.triangles[i][0] != mesh.triangles_text[i][0]){
+                        std::cout<<"triangle "<<i<<": "<<"mesh.triangles[i][0]: "<<mesh.triangles[i][0]<<", "<<"mesh.triangles_text[i][0]: "<<mesh.triangles_text[i][0]<<std::endl;
+                    }
+                    if(mesh.triangles[i][1] != mesh.triangles_text[i][1]){
+                        std::cout<<"triangle "<<i<<": "<<"mesh.triangles[i][1]: "<<mesh.triangles[i][1]<<", "<<"mesh.triangles_text[i][1]: "<<mesh.triangles_text[i][1]<<std::endl;
+                    }
+                    if(mesh.triangles[i][2] != mesh.triangles_text[i][2]){
+                        std::cout<<"triangle "<<i<<": "<<"mesh.triangles[i][2]: "<<mesh.triangles[i][2]<<", "<<"mesh.triangles_text[i][2]: "<<mesh.triangles_text[i][2]<<std::endl;
+                    }
+                }*/
+                std::cout<<"mesh.vertices.size(): "<<mesh.vertices.size()<<std::endl;
+                std::cout<<"mesh.textcoords.size(): "<<mesh.textcoords.size()<<std::endl;
                 std::cout<<"mesh.triangles.size(): "<<mesh.triangles.size()<<std::endl;
                 std::cout<<"mesh.triangles_text.size(): "<<mesh.triangles_text.size()<<std::endl;
                 }

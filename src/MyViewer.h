@@ -58,38 +58,34 @@ class MyViewer : public QGLViewer , public QOpenGLFunctions_3_0
 public :
 
     void boxCutter(){
-        renderGeometry(500, 500, 1000);
-        computeMeshTextCharts();
-        for(int i = 0; i<1; i++){
-            std::cout<<"mesh.getHeight(): "<<mesh.getWidth()<<std::endl;
-            std::cout<<"mesh.getHeight(): "<<mesh.getHeight()<<std::endl;
-            int w = (int)(500*mesh.getWidth());
-            int h = (int)(500*mesh.getHeight());
-            renderGeometry(w, h, 1000);
-            std::cout<<"w: "<<w<<std::endl;
-            std::cout<<"h: "<<h<<std::endl;
-            std::vector<std::vector<QPoint>> emptyBoxes = locateVoidBoxes(w,h,1000);
-            emptyBoxes.erase(emptyBoxes.begin());
-            //emptyBoxes.erase(emptyBoxes.begin());
-            voidBoxesImage.save("voidBoxes"+QString::number(i)+".jpg");
-            //computeCharts(width,height);
-            std::vector<std::vector<int>> newCuts = optimizedCuts(h, w, emptyBoxes);
-            std::vector<int> bCut = bestCut(newCuts, h, w);
-            std::cout<<"direction: "<<bCut[0]<<", minCut: "<<bCut[1]<<", maxCut: "<<bCut[2]<<std::endl;
-            mesh.cutMeshText(w,h,bCut[0],bCut[1]);
-            mesh.updateChartsFromChartsTriangles();
-            mesh.cutMeshText(w,h,bCut[0],bCut[2]);
-            mesh.updateChartsFromChartsTriangles();
-            std::vector<std::vector<double>> newRectangles = packRectangles(mesh, h, w, true);
-            //updateAtlas(w, h, newRectangles);
-            //atlas.save("packedAtlas"+QString::number(i)+".jpg");
-            //updateMeshText(w,h,newRectangles,bCut[0],bCut[1],bCut[2]);
-            moveCharts(w,h,newRectangles);
-            {
-                mesh.triangles = mesh.triangles_text;
-                for( unsigned int v = 0 ; v < mesh.textcoords.size() ; ++v ) {
-                    mesh.vertices[v].p = point3d( mesh.textcoords[v][0] , mesh.textcoords[v][1] , 0.0 );
-                }
+        std::cout<<"mesh.getHeight(): "<<mesh.getWidth()<<std::endl;
+        std::cout<<"mesh.getHeight(): "<<mesh.getHeight()<<std::endl;
+        int w = (int)(500*mesh.getWidth());
+        int h = (int)(500*mesh.getHeight());
+        renderGeometry(w, h, 1000);
+        std::cout<<"w: "<<w<<std::endl;
+        std::cout<<"h: "<<h<<std::endl;
+        std::vector<std::vector<QPoint>> emptyBoxes = locateVoidBoxes(w,h,1000);
+        emptyBoxes.erase(emptyBoxes.begin());
+        //emptyBoxes.erase(emptyBoxes.begin());
+        voidBoxesImage.save("voidBoxes.jpg");
+        //computeCharts(width,height);
+        std::vector<std::vector<int>> newCuts = optimizedCuts(h, w, emptyBoxes);
+        std::vector<int> bCut = bestCut(newCuts, h, w);
+        std::cout<<"direction: "<<bCut[0]<<", minCut: "<<bCut[1]<<", maxCut: "<<bCut[2]<<std::endl;
+        mesh.cutMeshText(w,h,bCut[0],bCut[1]);
+        mesh.updateChartsFromChartsTriangles();
+        mesh.cutMeshText(w,h,bCut[0],bCut[2]);
+        mesh.updateChartsFromChartsTriangles();
+        std::vector<std::vector<double>> newRectangles = packRectangles(mesh, h, w, true);
+        //updateAtlas(w, h, newRectangles);
+        //atlas.save("packedAtlas"+QString::number(i)+".jpg");
+        //updateMeshText(w,h,newRectangles,bCut[0],bCut[1],bCut[2]);
+        moveCharts(w,h,newRectangles);
+        {
+            mesh.triangles = mesh.triangles_text;
+            for( unsigned int v = 0 ; v < mesh.textcoords.size() ; ++v ) {
+                mesh.vertices[v].p = point3d( mesh.textcoords[v][0] , mesh.textcoords[v][1] , 0.0 );
             }
         }
     }
@@ -262,126 +258,6 @@ public :
         }
         return emptyBoxes;
     }
-
-
-    /*std::vector<std::vector<QPoint>> locateVoidBoxes(QGLFramebufferObject * _framebuffer, int wbuffer, int hbuffer, int threshold){
-        //BUILD SKIPBUFFER
-        QPoint skipBuffer[wbuffer][hbuffer];
-        std::vector<QPoint> emptyPixels;
-        std::vector<QPoint> fullPixels;
-        std::vector<std::vector<QPoint>> emptyBoxes;
-        int currentEmptySize=0;
-        for(int x = 0; x<wbuffer; x++){
-            for(int y = 0; y<hbuffer; y++){
-                skipBuffer[x][y] = QPoint(0,0);
-            }
-        }
-        for(int y = 0; y<hbuffer; y++){
-            currentEmptySize = 0;
-            for(int x = 0; x<wbuffer; x++){
-                if(! hasGeometry(x,y)){
-                    currentEmptySize++;
-                    //emptyPixels.push_back(QPoint(x,y));
-                    emptyPixels.push_back(QPoint(x,hbuffer-1-y));
-                    if(x<wbuffer-1){
-                        skipBuffer[x+1][y].setX(skipBuffer[x][y].x()+1);
-                    }
-                }
-                else{
-                    //fullPixels.push_back(QPoint(x,y));
-                    fullPixels.push_back(QPoint(x,hbuffer-1-y));
-                    if(currentEmptySize != 0){
-                        for(int k = 1; k<currentEmptySize; k++){
-                            skipBuffer[x-k-1][y].setY(k);
-                        }
-                        currentEmptySize = 0;
-                    }
-                }
-            }
-        }
-        //LOCATE LARGEST VOID BOXES
-        for(int i = 0; i<emptyPixels.size(); i++){
-            QPoint p = emptyPixels[i];
-            int upIndex = p.y();
-            int lowIndex = p.y();
-            QPoint largestPossibleExtent = QPoint(skipBuffer[p.x()][p.y()].x(),skipBuffer[p.x()][p.y()].y());
-            while(!hasGeometry(p.x(),upIndex) && upIndex > 0){
-                upIndex--;
-                largestPossibleExtent.setX(std::min(largestPossibleExtent.x(),skipBuffer[p.x()][upIndex].x()));
-                largestPossibleExtent.setY(std::min(largestPossibleExtent.y(),skipBuffer[p.x()][upIndex].y()));
-            }
-            while(!hasGeometry(p.x(),lowIndex) && lowIndex < hbuffer-1){
-                lowIndex++;
-                largestPossibleExtent.setX(std::min(largestPossibleExtent.x(),skipBuffer[p.x()][lowIndex].x()));
-                largestPossibleExtent.setY(std::min(largestPossibleExtent.y(),skipBuffer[p.x()][lowIndex].y()));
-            }
-            if((largestPossibleExtent.y()+largestPossibleExtent.x()+1)*((lowIndex-1)-(upIndex+1))>threshold){
-               std::vector<QPoint> emptyBox;
-               //emptyBox.push_back(QPoint(p.x()-largestPossibleExtent.x(),upIndex));
-               //emptyBox.push_back(QPoint(p.x()+largestPossibleExtent.y(),lowIndex));
-               emptyBox.push_back(QPoint(p.x()-largestPossibleExtent.x(),hbuffer-1-lowIndex));
-               emptyBox.push_back(QPoint(p.x()+largestPossibleExtent.y(),hbuffer-1-upIndex));
-               emptyBoxes.push_back(emptyBox);
-            }
-        }
-        struct {
-                bool operator()(std::vector<QPoint> emptyBox, std::vector<QPoint> emptyBoxPrim) const  //opérateur qui compare les tailles de deux emptyBox pour trier notre liste
-                {
-                    int x = emptyBox[0].x();
-                    int y = emptyBox[0].y();
-                    int X = emptyBox[1].x();
-                    int Y = emptyBox[1].y();
-
-                    int xPrim = emptyBoxPrim[0].x();
-                    int yPrim = emptyBoxPrim[0].y();
-                    int XPrim = emptyBoxPrim[1].x();
-                    int YPrim = emptyBoxPrim[1].y();
-
-                    return (X-x)*(Y-y)>(XPrim-xPrim)*(YPrim-yPrim);
-                }
-            } sizeIsBigger;
-    std::sort(emptyBoxes.begin(),emptyBoxes.end(),sizeIsBigger);
-    //FILTER OVERLAPS
-    int i = 0;
-    while(i<emptyBoxes.size()-1){
-        int j = i+1;
-        while(j<emptyBoxes.size()){
-            float overlap = overlapAmount(emptyBoxes[i],emptyBoxes[j]);
-            if(overlap>0.1){
-                emptyBoxes.erase(emptyBoxes.begin()+j);
-            }
-            else{
-                j++;
-            }
-        }
-        i++;
-    }
-    QImage image = _framebuffer->toImage();
-    atlas = QImage(wbuffer,hbuffer, QImage::Format_RGB32);
-    atlas.fill(QColor(0,0,0));
-    for(int i = 0; i<emptyPixels.size();i++){
-        image.setPixelColor(emptyPixels[i],QColor(255,0,0));
-    }
-    for(int i = 0; i<fullPixels.size(); i++){
-        atlas.setPixelColor(fullPixels[i], QColor(255,255,255));
-    }
-    atlas.save("atlas.jpg");
-    //emptyBoxes.erase(emptyBoxes.begin());
-    for(int i = 0; i<emptyBoxes.size();i++){
-        QPoint upLeft = emptyBoxes[i][0];
-        QPoint lowRight = emptyBoxes[i][1];
-        std::cout<<"x: "<<upLeft.x()<<" y:"<<upLeft.y()<<" X:"<<lowRight.x()<<" Y:"<<lowRight.y()<<std::endl;
-        for(int x = upLeft.x(); x<=lowRight.x(); x++){
-            for(int y = upLeft.y(); y<=lowRight.y(); y++){
-                image.setPixelColor(x,y,QColor(0,0,0));
-            }
-        }
-    }
-
-    image.save("voidBoxes.jpg");
-
-    return emptyBoxes;
-    }*/
 
     int emptyBoxSize(std::vector<QPoint> emptyBox){
         int x = emptyBox[0].x();
@@ -754,125 +630,6 @@ public :
             return bestCut;
         }
 
-    //calcule les différentes charts de l'atlas
-    /*void computeCharts(int wbuffer, int hbuffer){
-        std::cout<<"charts.size(): "<<charts.size()<<std::endl;
-        int chartIndex = 0;
-        std::cout<<"on commence à calculer les charts"<<std::endl;
-        for(int i = 0; i<wbuffer; i++){
-            std::vector<bool> examinedPixelsVector = std::vector<bool>();
-            std::vector<int> chartOfPixelsVector = std::vector<int>();
-            for(int j = 0; j<hbuffer; j++){
-                examinedPixelsVector.push_back(false);
-                chartOfPixelsVector.push_back(-1);
-            }
-            examinedPixels.push_back(examinedPixelsVector);
-            chartOfPixels.push_back(chartOfPixelsVector);
-        }
-        for(int x = 0; x<wbuffer; x++){
-            for(int y = 0; y<hbuffer; y++){
-                if((!examinedPixels[x][y]) && atlas.pixelColor(x,y).red() != 255 && atlas.pixelColor(x,y).green() != 255 && atlas.pixelColor(x,y).blue() != 255){
-                    Chart * chart = new Chart();
-                    std::cout<<"chart numéro "<< chartIndex << std::endl;
-                    examinePixel(wbuffer,hbuffer,x,y,chart, chartIndex);
-                    charts.push_back(chart);
-                    chartIndex++;
-                    std::cout<<"charts.size() après ajout: "<<charts.size()<<std::endl;
-                }
-            }
-        }
-        std::cout<<"Nombre de charts: "<<charts.size()<<std::endl;
-        QImage chartsImage = QImage(wbuffer,hbuffer, QImage::Format_RGB32);
-        chartsImage.fill(QColor(0,0,0));
-        for(int i = 0; i<charts.size(); i++){
-            int colorFactor = (int) (((float) i/ (float) charts.size())*255);
-            QColor chartColor = QColor(colorFactor,255-colorFactor, 0);
-            Chart * chart = charts[i];
-            std::vector<QPoint> pixelsInChart = chart->getPixelsInChart();
-            for(int k = 0; k<pixelsInChart.size(); k++){
-                chartsImage.setPixelColor(pixelsInChart[k],chartColor);
-            }
-        }
-        chartsImage.save("chartsImage.jpg");
-    }*/
-
-    //fonction récursive utilisée dans computeChart qui examine un pixel, puis examine ses pixels voisins dans le cas où il est non vide
-    /*void examinePixel(int wbuffer, int hbuffer, int x, int y, Chart * chart, int chartIndex){
-        //std::cout<<"début examinePixel"<<std::endl;
-        //std::cout<<"   on passe par le pixel ("<< x << "," << y <<")"<<std::endl;
-        //std::cout<<"atlas.size: "<<atlas.size().width()<<","<<atlas.size().height()<<std::endl;
-
-        if((x>=0) && (x<wbuffer) && (y>=0) && (y<hbuffer)){
-            //std::cout<<"examinedPixels[x][y]: "<<examinedPixels[x][y]<<std::endl;
-            if ((!examinedPixels[x][y]) && atlas.pixelColor(x,y).red() != 255 && atlas.pixelColor(x,y).green() != 255 && atlas.pixelColor(x,y).blue() != 255){
-                examinedPixels[x][y] = true;
-                chart->addPixelInChart(QPoint(x,y));
-                chartOfPixels[x][y] = chartIndex;
-                //std::cout<<"   on rajoute le pixel ("<< x << "," << y <<")"<<std::endl;
-                examinePixel(wbuffer,hbuffer,x-1,y-1,chart,chartIndex);
-                examinePixel(wbuffer,hbuffer,x-1,y,chart,chartIndex);
-                examinePixel(wbuffer,hbuffer,x-1,y+1,chart,chartIndex);
-                examinePixel(wbuffer,hbuffer,x,y-1,chart,chartIndex);
-                examinePixel(wbuffer,hbuffer,x,y+1,chart,chartIndex);
-                examinePixel(wbuffer,hbuffer,x+1,y-1,chart,chartIndex);
-                examinePixel(wbuffer,hbuffer,x+1,y,chart,chartIndex);
-                examinePixel(wbuffer,hbuffer,x+1,y+1,chart,chartIndex);
-
-            }
-            examinedPixels[x][y] = true;
-        }
-        if(charts.size()>1){
-            std::cout<<"on a fini de passer par ("<< x << "," << y <<")"<<std::endl;
-            std::cout<<"charts.size() à la fin de examinePixel: "<<charts.size()<<std::endl;
-        }
-    }*/
-
-    /*void updateAtlas(int wbuffer, int hbuffer, std::vector<std::vector<int>> newChartsBoundingBoxes){
-        std::cout<<"newChartsBoundingBoxes.size() au début de updateAtlas: "<<newChartsBoundingBoxes.size()<<std::endl;
-        QImage newAtlas = QImage(10*wbuffer,10*hbuffer, QImage::Format_RGB32);
-        newAtlas.fill(QColor(255,255,255));
-        int xMax = 0;
-        int yMax = 0;
-        for(int i = 0; i<newChartsBoundingBoxes.size(); i++){
-            Chart * chartToMove = charts[newChartsBoundingBoxes[i][0]];
-            xMax = std::max(xMax, newChartsBoundingBoxes[i][3]);
-            yMax = std::max(yMax, newChartsBoundingBoxes[i][4]);
-            std::vector<QPoint> pixelsInChart = chartToMove->getPixelsInChart();
-            if(newChartsBoundingBoxes[i][3]-newChartsBoundingBoxes[i][1] == chartToMove->getBoundingBox()[1].x()-chartToMove->getBoundingBox()[0].x()){
-                std::cout<<"pas de rotation"<<std::endl;
-                int moveX = newChartsBoundingBoxes[i][1]-chartToMove->getBoundingBox()[0].x();
-                int moveY = newChartsBoundingBoxes[i][2]-chartToMove->getBoundingBox()[0].y();
-                for(int k = 0; k<pixelsInChart.size(); k++){
-                    newAtlas.setPixelColor(pixelsInChart[k].x()+moveX, pixelsInChart[k].y()+moveY, QColor(0,255,0));
-                }
-            }
-            else{
-                std::cout<<"rotation"<<std::endl;
-                int moveX = newChartsBoundingBoxes[i][1]-chartToMove->getBoundingBox()[0].y();
-                int moveY = newChartsBoundingBoxes[i][2]-chartToMove->getBoundingBox()[0].x();
-                for(int k = 0; k<pixelsInChart.size(); k++){
-                    newAtlas.setPixelColor(pixelsInChart[k].y()+moveX, pixelsInChart[k].x()+moveY, QColor(0,255,0));
-                }
-            }
-        }
-        atlas = QImage(xMax+1,yMax+1,QImage::Format_RGB32);
-        for(int x = 0; x<xMax+1; x++){
-            for(int y = 0; y<yMax; y++){
-                atlas.setPixelColor(x,y,newAtlas.pixelColor(x,y));
-            }
-        }
-    }*/
-
-
-    //met à jour les coordonnées uv et les triangles de l'atlas après avoir trouvé un packing
-    /*void updateMeshText(int wbuffer, int hbuffer, std::vector<std::vector<double>> newChartsBoundingBoxes, int directionOfCut, int minCutPixel, int maxCutPixel){
-        computeMeshTextCharts();
-        cutMeshText(wbuffer, hbuffer, directionOfCut, minCutPixel);
-        cutMeshText(wbuffer, hbuffer, directionOfCut, maxCutPixel);
-        moveCharts(wbuffer, hbuffer, newChartsBoundingBoxes);
-
- }*/
-
     //crée deux fois le même vertex: une occurence pour chaque chart
     void createNewVertexTwice(int wbuffer, int hbuffer, int cornerA, int cornerB, int directionOfCut, double cutPosition){
         double tA = mesh.textcoords[cornerA][directionOfCut];
@@ -938,104 +695,6 @@ public :
         }
     }
 
-    /*void computeMeshTextCharts(){
-      int chartOfVertex[mesh.textcoords.size()];
-      for(int i = 0; i<mesh.textcoords.size(); i++){
-          std::vector<int> chart = std::vector<int>();
-          std::vector<double> boundingBox = std::vector<double>();
-          chartOfVertex[i] = -1;
-      }
-      mesh.charts = std::vector<std::vector<int>>();
-      mesh.chartsBoundingBoxes = std::vector<std::vector<double>>();
-      for(int i = 0; i<mesh.triangles_text.size(); i++){
-          std::cout<<i<<"ème passage dans la boucle de computeMeshTextCharts()"<<std::endl;
-          int corner0 = mesh.triangles_text[i][0];
-          int corner1 = mesh.triangles_text[i][1];
-          int corner2 = mesh.triangles_text[i][2];
-
-          if(chartOfVertex[corner0] != -1){
-              std::cout<<"condition 1"<<std::endl;
-              mesh.chartsTriangles[chartOfVertex[corner0]].push_back(mesh.triangles_text[i]);
-              mesh.charts[chartOfVertex[corner0]].push_back(corner1);
-              mesh.charts[chartOfVertex[corner0]].push_back(corner2);
-              chartOfVertex[corner1] = chartOfVertex[corner0];
-              chartOfVertex[corner2] = chartOfVertex[corner0];
-              mesh.chartsBoundingBoxes[chartOfVertex[corner0]][0] = std::min(std::min(mesh.textcoords[corner1][0],mesh.textcoords[corner2][0]), mesh.chartsBoundingBoxes[chartOfVertex[corner0]][0]);
-              mesh.chartsBoundingBoxes[chartOfVertex[corner0]][1] = std::max(std::max(mesh.textcoords[corner1][0],mesh.textcoords[corner2][0]), mesh.chartsBoundingBoxes[chartOfVertex[corner0]][1]);
-              mesh.chartsBoundingBoxes[chartOfVertex[corner0]][2] = std::min(std::min(mesh.textcoords[corner1][1],mesh.textcoords[corner2][1]), mesh.chartsBoundingBoxes[chartOfVertex[corner0]][2]);
-              mesh.chartsBoundingBoxes[chartOfVertex[corner0]][3] = std::max(std::max(mesh.textcoords[corner1][1],mesh.textcoords[corner2][1]), mesh.chartsBoundingBoxes[chartOfVertex[corner0]][3]);
-          }
-          else if(chartOfVertex[corner1] != -1){
-              std::cout<<"condition 2"<<std::endl;
-              mesh.chartsTriangles[chartOfVertex[corner1]].push_back(mesh.triangles_text[i]);
-              mesh.charts[chartOfVertex[corner1]].push_back(corner0);
-              mesh.charts[chartOfVertex[corner1]].push_back(corner2);
-              chartOfVertex[corner0] = chartOfVertex[corner1];
-              chartOfVertex[corner2] = chartOfVertex[corner1];
-              mesh.chartsBoundingBoxes[chartOfVertex[corner1]][0] = std::min(std::min(mesh.textcoords[corner0][0],mesh.textcoords[corner2][0]), mesh.chartsBoundingBoxes[chartOfVertex[corner1]][0]);
-              mesh.chartsBoundingBoxes[chartOfVertex[corner1]][1] = std::max(std::max(mesh.textcoords[corner0][0],mesh.textcoords[corner2][0]), mesh.chartsBoundingBoxes[chartOfVertex[corner1]][1]);
-              mesh.chartsBoundingBoxes[chartOfVertex[corner1]][2] = std::min(std::min(mesh.textcoords[corner0][1],mesh.textcoords[corner2][1]), mesh.chartsBoundingBoxes[chartOfVertex[corner1]][2]);
-              mesh.chartsBoundingBoxes[chartOfVertex[corner1]][3] = std::max(std::max(mesh.textcoords[corner0][1],mesh.textcoords[corner2][1]), mesh.chartsBoundingBoxes[chartOfVertex[corner1]][3]);
-          }
-          else if(chartOfVertex[corner2] != -1){
-              std::cout<<"condition 3"<<std::endl;
-              mesh.chartsTriangles[chartOfVertex[corner2]].push_back(mesh.triangles_text[i]);
-              std::cout<<"line 909"<<std::endl;
-              mesh.charts[chartOfVertex[corner2]].push_back(corner0);
-              mesh.charts[chartOfVertex[corner2]].push_back(corner1);
-              chartOfVertex[corner0] = chartOfVertex[corner2];
-              chartOfVertex[corner1] = chartOfVertex[corner2];
-              std::cout<<"line 914"<<std::endl;
-              mesh.chartsBoundingBoxes[chartOfVertex[corner2]][0] = std::min(std::min(mesh.textcoords[corner0][0],mesh.textcoords[corner1][0]), mesh.chartsBoundingBoxes[chartOfVertex[corner0]][0]);
-              mesh.chartsBoundingBoxes[chartOfVertex[corner2]][1] = std::max(std::max(mesh.textcoords[corner0][0],mesh.textcoords[corner1][0]), mesh.chartsBoundingBoxes[chartOfVertex[corner0]][1]);
-              mesh.chartsBoundingBoxes[chartOfVertex[corner2]][2] = std::min(std::min(mesh.textcoords[corner0][1],mesh.textcoords[corner1][1]), mesh.chartsBoundingBoxes[chartOfVertex[corner0]][2]);
-              mesh.chartsBoundingBoxes[chartOfVertex[corner2]][3] = std::max(std::max(mesh.textcoords[corner0][1],mesh.textcoords[corner1][1]), mesh.chartsBoundingBoxes[chartOfVertex[corner0]][3]);
-          }
-          else{
-              std::cout<<"condition 4"<<std::endl;
-              std::vector<int> chart = std::vector<int>();
-              std::vector<Triangle> chartTriangles = std::vector<Triangle>();
-              std::vector<double> boundingBox = std::vector<double>();
-              chartTriangles.push_back(mesh.triangles_text[i]);
-              mesh.chartsTriangles.push_back(chartTriangles);
-              chart.push_back(corner0);
-              chart.push_back(corner1);
-              chart.push_back(corner2);
-              chartOfVertex[corner0] = mesh.charts.size();
-              chartOfVertex[corner1] = mesh.charts.size();
-              chartOfVertex[corner2] = mesh.charts.size();
-              boundingBox.push_back(std::min(std::min(mesh.textcoords[corner0][0],mesh.textcoords[corner1][0]),mesh.textcoords[corner2][0]));
-              boundingBox.push_back(std::max(std::max(mesh.textcoords[corner0][0],mesh.textcoords[corner1][0]),mesh.textcoords[corner2][0]));
-              boundingBox.push_back(std::min(std::min(mesh.textcoords[corner0][1],mesh.textcoords[corner1][1]),mesh.textcoords[corner2][1]));
-              boundingBox.push_back(std::max(std::max(mesh.textcoords[corner0][1],mesh.textcoords[corner1][1]),mesh.textcoords[corner2][1]));
-              mesh.charts.push_back(chart);
-              mesh.chartsBoundingBoxes.push_back(boundingBox);
-          }
-      }
-      std::cout<<"nombre de charts du mesh: "<<mesh.charts.size()<<std::endl;
-   }*/
-
-   //associe à chaque chart de l'espace UV son chart dans l'espace rasterisé
-   /*void linkChartsRepresentations(int wbuffer, int hbuffer){
-       for(int i = 0; i<mesh.charts.size();i++){
-           std::vector<QPoint> boundingBox = std::vector<QPoint>();
-           boundingBox.push_back(QPoint((int) (wbuffer * mesh.chartsBoundingBoxes[i][0]), (int) (hbuffer * mesh.chartsBoundingBoxes[i][1])));
-           boundingBox.push_back(QPoint((int) (wbuffer * mesh.chartsBoundingBoxes[i][2]), (int) (hbuffer * mesh.chartsBoundingBoxes[i][3])));
-           std::cout<<"bounding box de la chart "<<i<<": ("<<(int) (wbuffer * mesh.chartsBoundingBoxes[i][0])<<", "<<(int) (hbuffer * mesh.chartsBoundingBoxes[i][1])<<"); ("<<(int) (wbuffer * mesh.chartsBoundingBoxes[i][2])<<", "<<(int) (hbuffer * mesh.chartsBoundingBoxes[i][3])<<")"<<std::endl;
-           int closestChart = 0;
-           float overlapMax = overlapAmount(boundingBox, charts[0]->getBoundingBox());
-           for(int k = 1; k<charts.size();k++){
-               float overlap = overlapAmount(boundingBox, charts[k]->getBoundingBox());
-               if(overlap>overlapMax){
-                   closestChart = k;
-                   overlapMax = overlap;
-               }
-           }
-           charts[closestChart]->addMeshTextChartIndices(i);
-           std::cout<<"closestChart: "<<closestChart<<std::endl;
-       }
-   }*/
-
    void moveCharts(int wbuffer, int hbuffer, std::vector<std::vector<double>> newChartsBoundingBoxes){
        for(int i = 0; i<newChartsBoundingBoxes.size(); i++){
            std::vector<int> chartToMove = mesh.charts[newChartsBoundingBoxes[i][0]];
@@ -1095,47 +754,6 @@ public :
             point3d const & p0 = mesh.vertices[ mesh.triangles[t][0] ].p;
             point3d const & p1 = mesh.vertices[ mesh.triangles[t][1] ].p;
             point3d const & p2 = mesh.vertices[ mesh.triangles[t][2] ].p;
-            point3d const & n = point3d::cross( p1-p0 , p2-p0 ).direction();
-            glNormal3f(n[0],n[1],n[2]);
-            glVertex3f(p0[0],p0[1],p0[2]);
-            glVertex3f(p1[0],p1[1],p1[2]);
-            glVertex3f(p2[0],p2[1],p2[2]);
-        }
-        glEnd();
-        /*if(!uvMode){
-            glEnable(GL_DEPTH_TEST);
-            glEnable( GL_LIGHTING );
-            glColor3f(0.5,0.5,0.8);
-            glBegin(GL_TRIANGLES);
-            for( unsigned int t = 0 ; t < mesh.triangles.size() ; ++t ) {
-                point3d const & p0 = mesh.vertices[ mesh.triangles[t][0] ].p;
-                point3d const & p1 = mesh.vertices[ mesh.triangles[t][1] ].p;
-                point3d const & p2 = mesh.vertices[ mesh.triangles[t][2] ].p;
-                point3d const & n = point3d::cross( p1-p0 , p2-p0 ).direction();
-                glNormal3f(n[0],n[1],n[2]);
-                glVertex3f(p0[0],p0[1],p0[2]);
-                glVertex3f(p1[0],p1[1],p1[2]);
-                glVertex3f(p2[0],p2[1],p2[2]);
-            }
-            glEnd();
-        }
-        else{
-            drawUV();
-        }*/
-    }
-
-    void drawUV() {
-        glEnable(GL_DEPTH_TEST);
-        glEnable( GL_LIGHTING );
-        glColor3f(0.5,0.5,0.8);
-        glBegin(GL_TRIANGLES);
-        for( unsigned int t = 0 ; t < mesh.triangles_text.size() ; ++t ) {
-            int v0 = mesh.triangles_text[t][0];
-            int v1 = mesh.triangles_text[t][1];
-            int v2 = mesh.triangles_text[t][2];
-            point3d const & p0 = point3d( mesh.textcoords[v0][0] , mesh.textcoords[v0][1] , 0.0 );
-            point3d const & p1 = point3d( mesh.textcoords[v1][0] , mesh.textcoords[v1][1] , 0.0 );
-            point3d const & p2 = point3d( mesh.textcoords[v2][0] , mesh.textcoords[v2][1] , 0.0 );
             point3d const & n = point3d::cross( p1-p0 , p2-p0 ).direction();
             glNormal3f(n[0],n[1],n[2]);
             glVertex3f(p0[0],p0[1],p0[2]);
@@ -1318,63 +936,11 @@ public slots:
             if(success) {
                 std::cout << fileName.toStdString() << " was opened successfully" << std::endl;
 
-                // test:
-                //computeMeshTextCharts();
-                //500,500,0,250);
-                /*{
-                    mesh.triangles = mesh.triangles_text;
-                    for( unsigned int v = 0 ; v < mesh.textcoords.size() ; ++v ) {
-                        mesh.vertices[v].p = point3d( mesh.textcoords[v][0] , mesh.textcoords[v][1] , 0.0 );
-                    }
-               }*/
-                //renderGeometry(500, 500, 1000);
-                //computeCharts(500,500);
+                renderGeometry(500, 500, 1000);
                 computeMeshTextCharts();
-                /*for(int i = 0; i<10; i++){
-                    std::cout<<"mesh.getHeight(): "<<mesh.getWidth()<<std::endl;
-                    std::cout<<"mesh.getHeight(): "<<mesh.getHeight()<<std::endl;
-                    int w = (int)(500*mesh.getWidth());
-                    int h = (int)(500*mesh.getHeight());
-                    renderGeometry(w, h, 1000);
-                    std::cout<<"w: "<<w<<std::endl;
-                    std::cout<<"h: "<<h<<std::endl;
-                    std::vector<std::vector<QPoint>> emptyBoxes = locateVoidBoxes(w,h,1000);
-                    emptyBoxes.erase(emptyBoxes.begin());
-                    //emptyBoxes.erase(emptyBoxes.begin());
-                    voidBoxesImage.save("voidBoxes"+QString::number(i)+".jpg");
-                    //computeCharts(width,height);
-                    std::vector<std::vector<int>> newCuts = optimizedCuts(h, w, emptyBoxes);
-                    std::vector<int> bCut = bestCut(newCuts, h, w);
-                    std::cout<<"direction: "<<bCut[0]<<", minCut: "<<bCut[1]<<", maxCut: "<<bCut[2]<<std::endl;
-                    mesh.cutMeshText(w,h,bCut[0],bCut[1]);
-                    mesh.updateChartsFromChartsTriangles();
-                    mesh.cutMeshText(w,h,bCut[0],bCut[2]);
-                    mesh.updateChartsFromChartsTriangles();
-                    std::vector<std::vector<double>> newRectangles = packRectangles(mesh, h, w, true);
-                    //updateAtlas(w, h, newRectangles);
-                    //atlas.save("packedAtlas"+QString::number(i)+".jpg");
-                    //updateMeshText(w,h,newRectangles,bCut[0],bCut[1],bCut[2]);
-                    moveCharts(w,h,newRectangles);
-                    {
-                        mesh.triangles = mesh.triangles_text;
-                        for( unsigned int v = 0 ; v < mesh.textcoords.size() ; ++v ) {
-                            mesh.vertices[v].p = point3d( mesh.textcoords[v][0] , mesh.textcoords[v][1] , 0.0 );
-                        }
-                    }
-                }*/
-
-                /*mesh.cutMeshText(500,500,0,200);
-                std::vector<std::vector<double>> boundingBoxes = mesh.getBoundingBoxes();
-                for(int i = 0; i<boundingBoxes.size();i++){
-                    std::cout<<"xmin: "<<boundingBoxes[i][0]<<", ymin: "<<boundingBoxes[i][1]<<", xmax: "<<boundingBoxes[i][2]<<", ymax: "<<boundingBoxes[i][3]<<std::endl;*/
+                std::cout<<"mesh.triangles.size(): "<<mesh.triangles.size()<<std::endl;
+                std::cout<<"mesh.triangles_text.size(): "<<mesh.triangles_text.size()<<std::endl;
                 }
-
-                /*{
-                    mesh.triangles = mesh.triangles_text;
-                    for( unsigned int v = 0 ; v < mesh.textcoords.size() ; ++v ) {
-                        mesh.vertices[v].p = point3d( mesh.textcoords[v][0] , mesh.textcoords[v][1] , 0.0 );
-                    }
-                }*/
 
                 point3d bb(FLT_MAX,FLT_MAX,FLT_MAX) , BB(-FLT_MAX,-FLT_MAX,-FLT_MAX);
                 for( unsigned int v = 0 ; v < mesh.vertices.size() ; ++v ) {

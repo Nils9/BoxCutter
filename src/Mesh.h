@@ -78,27 +78,45 @@ struct Mesh{
     }
     std::vector<std::vector<double>> getBoundingBoxes(){
         std::vector<std::vector<double>> boundingBoxes = std::vector<std::vector<double>>();
+        std::cout<<"chartsTriangles.size(): "<<chartsTriangles.size()<<std::endl;
+        std::cout<<"charts.size(): "<<charts.size()<<std::endl;
         for(int i = 0; i<chartsTriangles.size(); i++){
-            std::vector<double> bbox = std::vector<double>();
-            bbox.push_back(textcoords[charts[i][0]][0]);
-            bbox.push_back(textcoords[charts[i][0]][1]);
-            bbox.push_back(textcoords[charts[i][0]][0]);
-            bbox.push_back(textcoords[charts[i][0]][1]);
-            for(int j = 0; j<chartsTriangles[i].size(); j++){
+            std::cout<<"dans mesh.getBoundingBoxes() "<<i<<" ème chart"<<std::endl;
+            std::cout<<"charts[i].size(): "<<charts[i].size()<<std::endl;
+            std::cout<<"chartsTriangles[i].size(): "<<chartsTriangles[i].size()<<std::endl;
+            if(charts[i].size() != 0){
+                std::vector<double> bbox = std::vector<double>();
+                bbox.push_back(textcoords[charts[i][0]][0]);
+                bbox.push_back(textcoords[charts[i][0]][1]);
+                bbox.push_back(textcoords[charts[i][0]][0]);
+                bbox.push_back(textcoords[charts[i][0]][1]);
+                std::cout<<"chartsTriangles[i].size()"<<chartsTriangles[i].size()<<std::endl;
+                for(int j = 0; j<chartsTriangles[i].size(); j++){
 
-                int i0 = chartsTriangles[i][j][0];
-                int i1 = chartsTriangles[i][j][0];
-                int i2 = chartsTriangles[i][j][0];
+                    int i0 = chartsTriangles[i][j][0];
+                    int i1 = chartsTriangles[i][j][0];
+                    int i2 = chartsTriangles[i][j][0];
 
-                bbox[0] = std::min(bbox[0],std::min(textcoords[i0][0],std::min(textcoords[i1][0],textcoords[i2][0])));
-                bbox[1] = std::min(bbox[1],std::min(textcoords[i0][1],std::min(textcoords[i1][1],textcoords[i2][1])));
-                bbox[2] = std::max(bbox[2],std::max(textcoords[i0][0],std::max(textcoords[i1][0],textcoords[i2][0])));
-                bbox[3] = std::max(bbox[3],std::max(textcoords[i0][1],std::max(textcoords[i1][1],textcoords[i2][1])));
+                    bbox[0] = std::min(bbox[0],std::min(textcoords[i0][0],std::min(textcoords[i1][0],textcoords[i2][0])));
+                    bbox[1] = std::min(bbox[1],std::min(textcoords[i0][1],std::min(textcoords[i1][1],textcoords[i2][1])));
+                    bbox[2] = std::max(bbox[2],std::max(textcoords[i0][0],std::max(textcoords[i1][0],textcoords[i2][0])));
+                    bbox[3] = std::max(bbox[3],std::max(textcoords[i0][1],std::max(textcoords[i1][1],textcoords[i2][1])));
+                }
+                boundingBoxes.push_back(bbox);
             }
-            boundingBoxes.push_back(bbox);
+            else{
+                std::vector<double> bbox = std::vector<double>();
+                bbox.push_back(0.);
+                bbox.push_back(0.);
+                bbox.push_back(0.);
+                bbox.push_back(0.);
+                boundingBoxes.push_back(bbox);
+            }
+
         }
         return boundingBoxes;
     }
+
     void cutMeshText(int wbuffer, int hbuffer, int directionOfCut, int cutPositionPixel){
         std::cout<<"on rentre dans cutMeshText"<<std::endl;
         double cutPosition;

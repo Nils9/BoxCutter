@@ -82,12 +82,25 @@ public :
         //atlas.save("packedAtlas"+QString::number(i)+".jpg");
         //updateMeshText(w,h,newRectangles,bCut[0],bCut[1],bCut[2]);
         moveCharts(w,h,newRectangles);
-        {
-            mesh.triangles = mesh.triangles_text;
-            for( unsigned int v = 0 ; v < mesh.textcoords.size() ; ++v ) {
-                mesh.vertices[v].p = point3d( mesh.textcoords[v][0] , mesh.textcoords[v][1] , 0.0 );
-            }
+        if(uvMode){
+            displayUV();
         }
+    }
+
+    void displayUV(){
+        copyMesh = mesh;
+        mesh.triangles = mesh.triangles_text;
+        for( unsigned int v = 0 ; v < mesh.textcoords.size() ; ++v ) {
+            mesh.vertices[v].p = point3d( mesh.textcoords[v][0] , mesh.textcoords[v][1] , 0.0 );
+        }
+        point3d bb(FLT_MAX,FLT_MAX,FLT_MAX) , BB(-FLT_MAX,-FLT_MAX,-FLT_MAX);
+        for( unsigned int v = 0 ; v < mesh.vertices.size() ; ++v ) {
+            bb = point3d::min(bb , mesh.vertices[v]);
+            BB = point3d::max(BB , mesh.vertices[v]);
+        }
+        mesh.chartsTriangles3D = mesh.chartsTriangles;
+        adjustCamera(bb,BB);
+        update();
     }
 
     void renderGeometry(int wbuffer, int hbuffer, int threshold = 10)
@@ -661,6 +674,7 @@ public :
             if(mesh.chartOfVertex[k] == -1){
                 std::vector<int> chart = std::vector<int>();
                 std::vector<Triangle> chartTriangles = std::vector<Triangle>();
+                std::vector<Triangle> chartTriangles3D = std::vector<Triangle>();
                 std::vector<double> boundingBox = std::vector<double>();
                 boundingBox.push_back(mesh.textcoords[k][0]);
                 boundingBox.push_back(mesh.textcoords[k][1]);
@@ -668,6 +682,7 @@ public :
                 boundingBox.push_back(mesh.textcoords[k][1]);
                 mesh.charts.push_back(chart);
                 mesh.chartsTriangles.push_back(chartTriangles);
+                mesh.chartsTriangles3D.push_back(chartTriangles3D);
                 mesh.chartsBoundingBoxes.push_back(boundingBox);
 
                 examineVertex(k);
@@ -676,7 +691,9 @@ public :
         std::cout<<"nombre de charts du mesh: "<<mesh.charts.size()<<std::endl;
 
         for(int i = 0; i<mesh.triangles_text.size(); i++){
-            mesh.chartsTriangles[mesh.chartOfVertex[mesh.triangles_text[i][0]]].push_back(mesh.triangles_text[i]);
+            int chartIndex = mesh.chartOfVertex[mesh.triangles_text[i][0]];
+            mesh.chartsTriangles[chartIndex].push_back(mesh.triangles_text[i]);
+            mesh.chartsTriangles3D[chartIndex].push_back(mesh.triangles[i]);
         }
         std::cout<<"fin de computeMeshTextCharts"<<std::endl;
     }
@@ -746,21 +763,45 @@ public :
 
 
     void draw() {
-        glEnable(GL_DEPTH_TEST);
-        glEnable( GL_LIGHTING );
-        glColor3f(0.5,0.5,0.8);
-        glBegin(GL_TRIANGLES);
-        for( unsigned int t = 0 ; t < mesh.triangles.size() ; ++t ) {
-            point3d const & p0 = mesh.vertices[ mesh.triangles[t][0] ].p;
-            point3d const & p1 = mesh.vertices[ mesh.triangles[t][1] ].p;
-            point3d const & p2 = mesh.vertices[ mesh.triangles[t][2] ].p;
-            point3d const & n = point3d::cross( p1-p0 , p2-p0 ).direction();
-            glNormal3f(n[0],n[1],n[2]);
-            glVertex3f(p0[0],p0[1],p0[2]);
-            glVertex3f(p1[0],p1[1],p1[2]);
-            glVertex3f(p2[0],p2[1],p2[2]);
+        int n = mesh.chartsTriangles3D.size();
+        if(n == 0){
+            glEnable(GL_DEPTH_TEST);
+            glEnable( GL_LIGHTING );
+            glColor3f(0.5,0.5,0.8);
+            glBegin(GL_TRIANGLES);
+            for( unsigned int t = 0 ; t < mesh.triangles.size() ; ++t ) {
+                point3d const & p0 = mesh.vertices[ mesh.triangles[t][0] ].p;
+                point3d const & p1 = mesh.vertices[ mesh.triangles[t][1] ].p;
+                point3d const & p2 = mesh.vertices[ mesh.triangles[t][2] ].p;
+                point3d const & n = point3d::cross( p1-p0 , p2-p0 ).direction();
+                glNormal3f(n[0],n[1],n[2]);
+                glVertex3f(p0[0],p0[1],p0[2]);
+                glVertex3f(p1[0],p1[1],p1[2]);
+                glVertex3f(p2[0],p2[1],p2[2]);
+            }
+            glEnd();
         }
-        glEnd();
+
+        else{
+            glEnable(GL_DEPTH_TEST);
+            glEnable( GL_LIGHTING );
+            glBegin(GL_TRIANGLES);
+            double clr = 1./n;
+            for(int i = 0; i < n; i++){
+                glColor3f(clr*i,1-clr*i,clr*i);
+                for( unsigned int t = 0 ; t < mesh.chartsTriangles3D[i].size() ; ++t ) {
+                    point3d const & p0 = mesh.vertices[ mesh.chartsTriangles3D[i][t][0] ].p;
+                    point3d const & p1 = mesh.vertices[ mesh.chartsTriangles3D[i][t][1] ].p;
+                    point3d const & p2 = mesh.vertices[ mesh.chartsTriangles3D[i][t][2] ].p;
+                    point3d const & n = point3d::cross( p1-p0 , p2-p0 ).direction();
+                    glNormal3f(n[0],n[1],n[2]);
+                    glVertex3f(p0[0],p0[1],p0[2]);
+                    glVertex3f(p1[0],p1[1],p1[2]);
+                    glVertex3f(p2[0],p2[1],p2[2]);
+                }
+            }
+            glEnd();
+        }
     }
 
     void pickBackgroundColor() {
@@ -868,19 +909,8 @@ public :
             }
             else{
                 std::cout<<"on va passer en uv"<<std::endl;
-                copyMesh = mesh;
-                mesh.triangles = mesh.triangles_text;
-                for( unsigned int v = 0 ; v < mesh.textcoords.size() ; ++v ) {
-                    mesh.vertices[v].p = point3d( mesh.textcoords[v][0] , mesh.textcoords[v][1] , 0.0 );
-                }
-                point3d bb(FLT_MAX,FLT_MAX,FLT_MAX) , BB(-FLT_MAX,-FLT_MAX,-FLT_MAX);
-                for( unsigned int v = 0 ; v < mesh.vertices.size() ; ++v ) {
-                    bb = point3d::min(bb , mesh.vertices[v]);
-                    BB = point3d::max(BB , mesh.vertices[v]);
-                }
-                adjustCamera(bb,BB);
-                update();
                 uvMode = true;
+                displayUV();
             }
             /*update();
             uvMode = !uvMode;*/

@@ -577,7 +577,7 @@ public :
                     }
                 }
             }
-            std::cout<<"packing efficincy: "<<bestScore<<std::endl;
+            std::cout<<"packing efficiency: "<<bestScore<<std::endl;
             std::vector<int> bestCut;
 
             bestCut.push_back(orientation);

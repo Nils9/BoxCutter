@@ -84,6 +84,14 @@ public :
         mesh.cutMeshText(w,h,bCut[0],bCut[2],true);
         mesh.updateChartsFromChartsTriangles();
         std::vector<std::vector<double>> newRectangles = packRectangles(mesh, h, w, true);
+        std::cout << "fin du packing" << std::endl;
+        for(int i = 0; i < newRectangles.size(); i++){
+            double xmin = newRectangles[i][1];
+            double ymin = newRectangles[i][2];
+            double xmax = newRectangles[i][3];
+            double ymax = newRectangles[i][4];
+            std::cout << "xmin : " << xmin << "xmax : " << xmax << "ymin : " << ymin << "ymax : " << ymax << std::endl;
+        }
         moveCharts(w,h,newRectangles);
         if(uvMode){
             meshToUV();
@@ -504,18 +512,26 @@ public :
             std::sort(sizes.begin(), sizes.end(), areaIsBigger);
 
             //On initialise un arbre avec une taille assez grande (à discuter)
-            PackingTree * packingTree = new PackingTree(2.0, 2.0);
+            PackingTree * packingTree = new PackingTree(1.0, 1.0);
 
             //On calcule la nouvelle place de chacun des rectangles grâce à l'arbre
             for(int i = 0; i < sizes.size(); i++){
                 //std::cout<<boundingBoxes[sizes[i][0]][0]<<" "<<boundingBoxes[sizes[i][0]][1]<<" "<<boundingBoxes[sizes[i][0]][2]<<" "<<boundingBoxes[sizes[i][0]][3]<<std::endl;
                 std::vector<double> newRectangle = packingTree->place(sizes[i]);
                 //std::cout<<"devient "<<newRectangle[1]<<" "<<newRectangle[2]<<" "<<newRectangle[3]<<" "<<newRectangle[4]<<std::endl;
-                newRectangles.push_back(newRectangle);
+                if(newRectangle.empty()){
+                    std::cout << "La coupe n'est pas valable" << std::endl;
+                    std::vector<std::vector<double>> nullVec;
+                    return nullVec;
+                }
+                else{
+                    newRectangles.push_back(newRectangle);
+                }
             }
             if(test){
              std::cout<<"newRectangle.size() à la fin de packRectangles: "<<newRectangles.size()<<std::endl;
             }
+            std::cout << "la coupe est valable" << std::endl;
             return newRectangles;
         }
 
@@ -541,9 +557,10 @@ public :
 
         //Réalise toutes les coupes et renvoie l'indice de la coupe qui donne la plus petite image après packing
         std::vector<int> bestCut(std::vector<std::vector<int>> newCuts, int hbuffer, int wbuffer){
-            double lowestScore = INFINITY;
+            double bestScore = 0;
             int orientation, min, max;
             int bestBoundingBox = 0;
+            double meshArea = mesh.getMeshArea();
             for(int i = 0; i < newCuts.size(); i++){
                 //std::cout<< "Traitement de la coupe : " << i << std::endl;
                 std::vector<Chart*> currentChartV = charts;
@@ -578,38 +595,43 @@ public :
 
                 std::vector<std::vector<double>> newRectanglesV = packRectangles(currentMeshV, hbuffer, wbuffer);
                 std::vector<std::vector<double>> newRectanglesH = packRectangles(currentMeshH, hbuffer, wbuffer);
-                std::vector<double> sizeV = computeImageSize(newRectanglesV, hbuffer, wbuffer);
-                double newAreaV = sizeV[0] * sizeV[1];
-                double scoreV = newAreaV * std::pow(lV, 0.2);
-                std::cout << "Taille verticale : " << sizeV[0] << "x" << sizeV[1] << std::endl;
-                std::cout << "Score V " << scoreV << std::endl;
-                std::vector<double> sizeH = computeImageSize(newRectanglesH, hbuffer, wbuffer);
-                double newAreaH = sizeH[0] * sizeH[1];
-                double scoreH = newAreaH * std::pow(lH, 0.2);
-                std::cout << "Score H " << scoreH << std::endl;
-                std::cout << "Taille horizontale : " << sizeH[0] << "x" << sizeH[1] << std::endl;
-                std::cout<<"newCuts["<<i<<"][0]: "<<newCuts[i][0]<<", newCuts["<<i<<"][1]: "<<newCuts[i][1]<<", newCuts["<<i<<"][2]: "<<newCuts[i][2]<<", newCuts["<<i<<"][3]: "<<newCuts[i][3]<<std::endl;
-                if(scoreV < lowestScore){
-                    bestBoundingBox = i;
-                    std::cout << "Nouvelle meilleure coupe avec score de : " << scoreV << std::endl;
-                    lowestScore = scoreV;
-                    orientation = 0;
-                    min = newCuts[i][2];
-                    max = newCuts[i][3];
-                    std::cout<<"min cut: "<<min<<std::endl;
-                    std::cout<<"max cut: "<<max<<std::endl;
-                }
-                if(scoreH < lowestScore){
-                    bestBoundingBox = i;
-                    std::cout << "Nouvelle meilleure coupe avec score de : " << scoreH << std::endl;
-                    lowestScore = scoreH;
-                    orientation = 1;
-                    min = newCuts[i][0];
-                    max = newCuts[i][1];
-                    std::cout<<"min cut courant: "<<min<<std::endl;
-                    std::cout<<"max cut courant: "<<max<<std::endl;
-                }
 
+                if(not newRectanglesV.empty()){
+                    std::vector<double> sizeV = computeImageSize(newRectanglesV, hbuffer, wbuffer);
+                    double packEffV = meshArea*100/(sizeV[0] * sizeV[1]);
+                    double scoreV = packEffV/std::pow(lV, 0);
+                    std::cout << "Taille verticale : " << sizeV[0] << "x" << sizeV[1] << std::endl;
+                    std::cout << "Score V " << scoreV << std::endl;
+                    if(scoreV > bestScore){
+                        bestBoundingBox = i;
+                        std::cout << "Nouvelle meilleure coupe avec score de : " << scoreV << " et efficiency de " << packEffV << "%" << std::endl;
+                        bestScore = scoreV;
+                        orientation = 0;
+                        min = newCuts[i][2];
+                        max = newCuts[i][3];
+                        std::cout<<"min cut: "<<min<<std::endl;
+                        std::cout<<"max cut: "<<max<<std::endl;
+                    }
+                }
+                if(not newRectanglesH.empty()){
+                    std::vector<double> sizeH = computeImageSize(newRectanglesH, hbuffer, wbuffer);
+                    double packEffH = meshArea*100/(sizeH[0] * sizeH[1]);
+                    double scoreH = packEffH/std::pow(lH, 0);
+                    std::cout << "Score H " << scoreH << std::endl;
+                    std::cout << "Taille horizontale : " << sizeH[0] << "x" << sizeH[1] << std::endl;
+                    std::cout<<"newCuts["<<i<<"][0]: "<<newCuts[i][0]<<", newCuts["<<i<<"][1]: "<<newCuts[i][1]<<", newCuts["<<i<<"][2]: "<<newCuts[i][2]<<", newCuts["<<i<<"][3]: "<<newCuts[i][3]<<std::endl;
+
+                    if(scoreH > bestScore){
+                        bestBoundingBox = i;
+                        std::cout << "Nouvelle meilleure coupe avec score de : " << scoreH << " et efficiency de " << packEffH << "%" << std::endl;
+                        bestScore = scoreH;
+                        orientation = 1;
+                        min = newCuts[i][0];
+                        max = newCuts[i][1];
+                        std::cout<<"min cut courant: "<<min<<std::endl;
+                        std::cout<<"max cut courant: "<<max<<std::endl;
+                    }
+                }
             }
             std::cout<<"on choisit la Bounding Box "<<bestBoundingBox<<std::endl;
             std::cout<<"orientation de la cut: "<<orientation<<std::endl;

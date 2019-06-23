@@ -76,7 +76,7 @@ std::vector<Node*> Node::splitNode(std::vector<double> newPlace, std::vector<Nod
             double newWidth2 = x1 - x0;
             double newHeight2 = this->ymax - y1 /*- 1*/;
             double newArea2 = newWidth2 * newHeight2;
-            Node * node2 = new Node(newWidth2, newHeight2, x0, y1 /*+ 1*/, x1, this->ymax);
+            Node * node2 = new Node(newHeight2, newWidth2, x0, y1 /*+ 1*/, x1, this->ymax);
             //std::cout << "coordonnées du noeud rajouté en dessous" << std::endl;
             node2->getCoord();
             newNodes.push_back(node2);

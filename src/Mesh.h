@@ -39,6 +39,8 @@ struct Mesh{
     std::vector<std::vector<Triangle>> chartsTriangles3D;
     std::vector<std::vector<double>> chartsBoundingBoxes;
     std::vector<int> chartOfVertex;
+    double meshArea;
+
     void updateNeighbours(){
         for(int k = 0; k<textcoords.size(); k++){
             std::vector<int> vec = std::vector<int>();
@@ -468,6 +470,24 @@ struct Mesh{
             ymin = std::min(ymin, textcoords[i][1]);
         }
         return ymin;
+    }
+
+    double getMeshArea(){
+        double area = 0;
+        for(int i = 0; i < triangles_text.size(); i++){
+            int p0 = triangles_text[i][0];
+            int p1 = triangles_text[i][1];
+            int p2 = triangles_text[i][2];
+            float x0 = textcoords[p0][0];
+            float y0 = textcoords[p0][1];
+            float x1 = textcoords[p1][0];
+            float y1 = textcoords[p1][1];
+            float x2 = textcoords[p2][0];
+            float y2 = textcoords[p2][1];
+            area += fabs(0.5*(x0*(y1-y2)+x1*(y2-y0)+x2*(y0-y1)));
+        }
+        std::cout << "Aire trouvée " << area << std::endl;
+        return area;
     }
 };
 

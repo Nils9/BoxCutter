@@ -61,7 +61,6 @@ struct Mesh{
                 newTrianglesText.push_back(chartsTriangles[k][i]);
             }
         }
-        std::cout<<"nombre de triangles dans newTrianglesText à la fin de updateTextTriangles: "<<newTrianglesText.size()<<std::endl;
         triangles_text = newTrianglesText;
     }
 
@@ -72,7 +71,6 @@ struct Mesh{
                 newTriangles.push_back(chartsTriangles3D[k][i]);
             }
         }
-        std::cout<<"nombre de triangles dans newTrianglesText à la fin de updateTextTriangles: "<<newTriangles.size()<<std::endl;
         triangles = newTriangles;
     }
 
@@ -89,21 +87,15 @@ struct Mesh{
             textcoords[charts[chartIndex][i]] = uvCoord(textcoords[charts[chartIndex][i]][0]+deltaX,textcoords[charts[chartIndex][i]][1]+deltaY);
         }
     }
-    std::vector<std::vector<double>> getBoundingBoxes(){
+    void updateBoundingBoxes(){
         std::vector<std::vector<double>> boundingBoxes = std::vector<std::vector<double>>();
-        std::cout<<"chartsTriangles.size(): "<<chartsTriangles.size()<<std::endl;
-        std::cout<<"charts.size(): "<<charts.size()<<std::endl;
         for(int i = 0; i<chartsTriangles.size(); i++){
-            std::cout<<"dans mesh.getBoundingBoxes() "<<i<<" ème chart"<<std::endl;
-            std::cout<<"charts[i].size(): "<<charts[i].size()<<std::endl;
-            std::cout<<"chartsTriangles[i].size(): "<<chartsTriangles[i].size()<<std::endl;
             if(charts[i].size() != 0){
                 std::vector<double> bbox = std::vector<double>();
                 bbox.push_back(textcoords[charts[i][0]][0]);
                 bbox.push_back(textcoords[charts[i][0]][1]);
                 bbox.push_back(textcoords[charts[i][0]][0]);
                 bbox.push_back(textcoords[charts[i][0]][1]);
-                std::cout<<"chartsTriangles[i].size()"<<chartsTriangles[i].size()<<std::endl;
                 for(int j = 0; j<chartsTriangles[i].size(); j++){
 
                     int i0 = chartsTriangles[i][j][0];
@@ -127,29 +119,35 @@ struct Mesh{
             }
 
         }
-        return boundingBoxes;
+        chartsBoundingBoxes =  boundingBoxes;
     }
 
-    void cutMeshText(int wbuffer, int hbuffer, int directionOfCut, int cutPositionPixel){
-        std::cout<<"on rentre dans cutMeshText"<<std::endl;
+    void cutMeshText(int wbuffer, int hbuffer, int directionOfCut, int cutPositionPixel, bool test = false){
+        if(test){
+         std::cout<<"on rentre dans cutMeshText"<<std::endl;
+        }
         double cutPosition;
         switch(directionOfCut){
-            case 0: cutPosition = (double) cutPositionPixel/(double)wbuffer;
+            case 0: cutPosition = getXMin()+getWidth()*((double) cutPositionPixel/(double)wbuffer);
                     break;
-            case 1: cutPosition = (double)cutPositionPixel/(double)hbuffer;
+            case 1: cutPosition = getYMin()+getHeight()*((double)cutPositionPixel/(double)hbuffer);
                     break;
         }
-        std::cout<<"cutPositon: "<<cutPosition<<std::endl;
+        if(test){
+         std::cout<<"cutPositon: "<<cutPosition<<std::endl;
+        }
         std::vector<std::vector<Triangle>> newChartsTriangles = std::vector<std::vector<Triangle>>();
         std::vector<std::vector<Triangle>> newChartsTriangles3D = std::vector<std::vector<Triangle>>();
         for(int k = 0; k<chartsTriangles.size();k++){
-            std::cout<<k<<" ème chart étudiée dans cutMeshText"<<std::endl;
+            if(test){
+             std::cout<<k<<" ème chart étudiée dans cutMeshText"<<std::endl;
+            }
             std::vector<Triangle> chartsTriangleLeft = std::vector<Triangle>();
             std::vector<Triangle> chartsTriangleRight = std::vector<Triangle>();
             std::vector<Triangle> chartsTriangleLeft3D = std::vector<Triangle>();
             std::vector<Triangle> chartsTriangleRight3D = std::vector<Triangle>();
             for(int i = 0; i<chartsTriangles[k].size(); i++){
-                std::cout<<i<<" ème triangle du chart"<<std::endl;
+                //std::cout<<i<<" ème triangle du chart"<<std::endl;
                 int corner0 = chartsTriangles[k][i][0];
                 int corner1 = chartsTriangles[k][i][1];
                 int corner2 = chartsTriangles[k][i][2];
@@ -210,8 +208,8 @@ struct Mesh{
                         tri0.corners[2] = textcoords.size()-1;
 
                         tri3D0.corners[0] = corner3D0;
-                        tri3D0.corners[0] = vertices.size()-2;
-                        tri3D0.corners[0] = vertices.size()-1;
+                        tri3D0.corners[1] = vertices.size()-2;
+                        tri3D0.corners[2] = vertices.size()-1;
 
                         tri1.corners[0] = textcoords.size()-4;
                         tri1.corners[1] = corner1;
@@ -258,8 +256,8 @@ struct Mesh{
                         tri0.corners[2] = textcoords.size()-3;
 
                         tri3D0.corners[0] = corner3D1;
-                        tri3D0.corners[0] = vertices.size()-1;
-                        tri3D0.corners[0] = vertices.size()-2;
+                        tri3D0.corners[1] = vertices.size()-1;
+                        tri3D0.corners[2] = vertices.size()-2;
 
                         tri1.corners[0] = textcoords.size()-4;
                         tri1.corners[1] = textcoords.size()-2;
@@ -304,8 +302,8 @@ struct Mesh{
                         tri0.corners[2] = textcoords.size()-1;
 
                         tri3D0.corners[0] = corner3D2;
-                        tri3D0.corners[0] = vertices.size()-2;
-                        tri3D0.corners[0] = vertices.size()-1;
+                        tri3D0.corners[1] = vertices.size()-2;
+                        tri3D0.corners[2] = vertices.size()-1;
 
                         tri1.corners[0] = textcoords.size()-2;
                         tri1.corners[1] = textcoords.size()-4;
@@ -342,22 +340,29 @@ struct Mesh{
                             chartsTriangleLeft3D.push_back(tri3D2);
                         }
                     }
+
                 }
             }
             if(chartsTriangleLeft.size() ==  0 || chartsTriangleRight.size() == 0){
-                std::cout<<"on remet l'ancien chart"<<std::endl;
+                if(test){
+                    std::cout<<"on remet l'ancien chart"<<std::endl;
+                }
                 newChartsTriangles.push_back(chartsTriangles[k]);
                 newChartsTriangles3D.push_back(chartsTriangles3D[k]);
             }
             else{
-                std::cout<<"le chart est coupé en deux"<<std::endl;
+                if(test){
+                    std::cout<<"le chart est coupé en deux"<<std::endl;
+                }
                 newChartsTriangles.push_back(chartsTriangleLeft);
                 newChartsTriangles.push_back(chartsTriangleRight);
                 newChartsTriangles3D.push_back(chartsTriangleLeft3D);
                 newChartsTriangles3D.push_back(chartsTriangleRight3D);
             }
         }
-        std::cout<<"taille newChartsTriangles à la fin du cut: "<<newChartsTriangles.size()<<std::endl;
+        if(test){
+         std::cout<<"taille newChartsTriangles à la fin du cut: "<<newChartsTriangles.size()<<std::endl;
+        }
         chartsTriangles = newChartsTriangles;
         chartsTriangles3D = newChartsTriangles3D;
         updateTextTriangles();
@@ -424,7 +429,7 @@ struct Mesh{
         double yB = vertices[corner3DB][1];
         double zB = vertices[corner3DB][2];
 
-        vertices.push_back(Vertex(xA+distance*(xB-xA),yA+distance*(yB-yA),xA+distance*(yB-yA)));
+        vertices.push_back(Vertex(xA+distance*(xB-xA),yA+distance*(yB-yA),zA+distance*(zB-zA)));
     }
 
     double getWidth(){
@@ -436,6 +441,15 @@ struct Mesh{
         }
         return xmax-xmin;
     }
+
+    double getXMin(){
+        double xmin = textcoords[0][0];
+        for(int i = 1; i<textcoords.size(); i++){
+            xmin = std::min(xmin, textcoords[i][0]);
+        }
+        return xmin;
+    }
+
     double getHeight(){
         double ymin = textcoords[0][1];
         double ymax = textcoords[0][1];
@@ -444,6 +458,14 @@ struct Mesh{
             ymax = std::max(ymax, textcoords[i][1]);
         }
         return ymax-ymin;
+    }
+
+    double getYMin(){
+        double ymin = textcoords[0][1];
+        for(int i = 1; i<textcoords.size(); i++){
+            ymin = std::min(ymin, textcoords[i][1]);
+        }
+        return ymin;
     }
 };
 

@@ -118,7 +118,7 @@ struct Mesh{
         return boundingBoxes;
     }
 
-    void cutMeshText(int wbuffer, int hbuffer, int directionOfCut, int cutPositionPixel){
+    double cutMeshText(int wbuffer, int hbuffer, int directionOfCut, int cutPositionPixel){
         std::cout<<"on rentre dans cutMeshText"<<std::endl;
         double cutPosition;
         switch(directionOfCut){
@@ -129,6 +129,7 @@ struct Mesh{
         }
         std::cout<<"cutPositon: "<<cutPosition<<std::endl;
         std::vector<std::vector<Triangle>> newChartsTriangles = std::vector<std::vector<Triangle>>();
+        double cutLength = 0;
         for(int k = 0; k<chartsTriangles.size();k++){
             std::cout<<k<<" ème chart étudiée dans cutMeshText"<<std::endl;
             std::vector<Triangle> chartsTriangleLeft = std::vector<Triangle>();
@@ -249,6 +250,7 @@ struct Mesh{
                             chartsTriangleLeft.push_back(tri2);
                         }
                     }
+                    cutLength += fabs(textcoords[textcoords.size()-1][1-directionOfCut] - textcoords[textcoords.size()-3][1-directionOfCut]);
                 }
             }
             if(chartsTriangleLeft.size() ==  0 || chartsTriangleRight.size() == 0){
@@ -264,6 +266,7 @@ struct Mesh{
         std::cout<<"taille newChartsTriangles à la fin du cut: "<<newChartsTriangles.size()<<std::endl;
         chartsTriangles = newChartsTriangles;
         updateTextTriangles();
+        return cutLength;
     }
 
     void updateChartsFromChartsTriangles(){

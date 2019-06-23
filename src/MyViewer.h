@@ -71,6 +71,7 @@ public :
         voidBoxesImage.save("voidBoxes.jpg");
         //computeCharts(width,height);
         std::vector<std::vector<int>> newCuts = optimizedCuts(h, w, emptyBoxes);
+        std::cout << "Nombre de cuts à analyser : " << newCuts.size() << " x2" << std::endl;
         std::vector<int> bCut = bestCut(newCuts, h, w);
         std::cout<<"direction: "<<bCut[0]<<", minCut: "<<bCut[1]<<", maxCut: "<<bCut[2]<<std::endl;
         mesh.cutMeshText(w,h,bCut[0],bCut[1]);
@@ -344,7 +345,6 @@ public :
                 if((currentLength <= bestLength) && currentLength >= 0){
                     bestLength = currentLength;
                     bestCut0 = i;
-                    std::cout<<"bestCut0 devient "<<i<<std::endl;
                 }
             }
 
@@ -548,8 +548,8 @@ public :
 
         //Après packing, calcul de la taille nécessaire pour la nouvelle image
         std::vector<double> computeImageSize(std::vector<std::vector<double>> rectangles, int hbuffer, int wbuffer){
-            int xmax = 0;
-            int ymax = 0;
+            double xmax = 0;
+            double ymax = 0;
             std::vector<double> newSize;
 
             for(int i = 0; i < rectangles.size(); i++){
@@ -568,9 +568,8 @@ public :
 
         //Réalise toutes les coupes et renvoie l'indice de la coupe qui donne la plus petite image après packing
         std::vector<int> bestCut(std::vector<std::vector<int>> newCuts, int hbuffer, int wbuffer){
-            double lowestArea = 1.5*1.5;
+            double lowestScore = INFINITY;
             int orientation, min, max;
-            std::cout << "best cut au pouvoir" << std::endl;
             int bestBoundingBox = 0;
             for(int i = 0; i < newCuts.size(); i++){
                 //std::cout<< "Traitement de la coupe : " << i << std::endl;
@@ -589,13 +588,19 @@ public :
                 //std::cout << "Taille des charts H après: " << currentChartH.size() << std::endl;
 
                 //remplace les packHorizontalCut et packVerticalCut
-                currentMeshV.cutMeshText(wbuffer,hbuffer,0,currentCut[2]);
-                currentMeshV.cutMeshText(wbuffer,hbuffer,0,currentCut[3]);
+                double lV = 0;
+                lV += currentMeshV.cutMeshText(wbuffer,hbuffer,0,currentCut[2]);
+                lV += currentMeshV.cutMeshText(wbuffer,hbuffer,0,currentCut[3]);
                 currentMeshV.updateChartsFromChartsTriangles();
+                std::cout << "lV " << lV << std::endl;
 
-                currentMeshH.cutMeshText(wbuffer,hbuffer,1,currentCut[0]);
-                currentMeshH.cutMeshText(wbuffer,hbuffer,0,currentCut[1]);
+
+                double lH = 0;
+                lH += currentMeshH.cutMeshText(wbuffer,hbuffer,1,currentCut[0]);
+                lH += currentMeshH.cutMeshText(wbuffer,hbuffer,1,currentCut[1]);
                 currentMeshH.updateChartsFromChartsTriangles();
+                std::cout << "lH " << lH << std::endl;
+
 
                 std::cout<<"on passe à packRectangles dans bcut"<<std::endl;
 
@@ -603,25 +608,29 @@ public :
                 std::vector<std::vector<double>> newRectanglesH = packRectangles(currentMeshH, hbuffer, wbuffer);
                 std::vector<double> sizeV = computeImageSize(newRectanglesV, hbuffer, wbuffer);
                 double newAreaV = sizeV[0] * sizeV[1];
-                //std::cout << "Taille verticale : " << sizeV[0] << "x" << sizeV[1] << std::endl;
+                double scoreV = newAreaV * std::pow(lV, 0.2);
+                std::cout << "Taille verticale : " << sizeV[0] << "x" << sizeV[1] << std::endl;
+                std::cout << "Score V " << scoreV << std::endl;
                 std::vector<double> sizeH = computeImageSize(newRectanglesH, hbuffer, wbuffer);
                 double newAreaH = sizeH[0] * sizeH[1];
-                //std::cout << "Taille horizontale : " << sizeH[0] << "x" << sizeH[1] << std::endl;
+                double scoreH = newAreaH * std::pow(lH, 0.2);
+                std::cout << "Score H " << scoreH << std::endl;
+                std::cout << "Taille horizontale : " << sizeH[0] << "x" << sizeH[1] << std::endl;
                 std::cout<<"newCuts["<<i<<"][0]: "<<newCuts[i][0]<<", newCuts["<<i<<"][1]: "<<newCuts[i][1]<<", newCuts["<<i<<"][2]: "<<newCuts[i][2]<<", newCuts["<<i<<"][3]: "<<newCuts[i][3]<<std::endl;
-                if(newAreaV < lowestArea){
+                if(scoreV < lowestScore){
                     bestBoundingBox = i;
-                    std::cout << "Nouvelle meilleure coupe avec une aire de : " << sizeV[0] << "x" << sizeV[1] << std::endl;
-                    lowestArea = newAreaV;
+                    std::cout << "Nouvelle meilleure coupe avec score de : " << scoreV << std::endl;
+                    lowestScore = scoreV;
                     orientation = 0;
                     min = newCuts[i][2];
                     max = newCuts[i][3];
                     std::cout<<"min cut: "<<min<<std::endl;
                     std::cout<<"max cut: "<<max<<std::endl;
                 }
-                if(newAreaH < lowestArea){
+                if(scoreH < lowestScore){
                     bestBoundingBox = i;
-                    std::cout << "Nouvelle meilleure coupe avec une aire de : " << sizeH[0] << "x" << sizeH[1] << std::endl;
-                    lowestArea = newAreaH;
+                    std::cout << "Nouvelle meilleure coupe avec score de : " << scoreH << std::endl;
+                    lowestScore = scoreH;
                     orientation = 1;
                     min = newCuts[i][0];
                     max = newCuts[i][1];

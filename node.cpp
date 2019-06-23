@@ -61,15 +61,11 @@ std::vector<Node*> Node::splitNode(std::vector<double> newPlace, std::vector<Nod
     double x1 = newPlace[3];
     double y1 = newPlace[4];
     std::vector<Node*> newNodes;
-    //std::cout << "coordonnées du noeud splité" << std::endl;
-    this->getCoord();
     if(x1 < this->xmax){ // cas où il existe un noeud fils à droite
         double newWidth = this->xmax - x1 /*- 1*/;
         double newHeight = this->ymax - y0;
         double newArea = newWidth * newHeight;
         Node * node1 = new Node(newHeight, newWidth, x1 /*+ 1*/, y0, this->xmax, this->ymax);
-        //std::cout << "coordonnées du noeud rajouté en dessous" << std::endl;
-        node1->getCoord();
         newNodes.push_back(node1);
 
         if(y1 < this->ymax){ //cas où il existe aussi un noeud fils bas
@@ -77,8 +73,6 @@ std::vector<Node*> Node::splitNode(std::vector<double> newPlace, std::vector<Nod
             double newHeight2 = this->ymax - y1 /*- 1*/;
             double newArea2 = newWidth2 * newHeight2;
             Node * node2 = new Node(newHeight2, newWidth2, x0, y1 /*+ 1*/, x1, this->ymax);
-            //std::cout << "coordonnées du noeud rajouté en dessous" << std::endl;
-            node2->getCoord();
             newNodes.push_back(node2);
         }
     }
@@ -122,6 +116,3 @@ std::vector<Node*> Node::modifySpace(std::vector<Node*> space, std::vector<Node*
     return space;
 }
 
-void Node::getCoord(){
-    //std::cout << "Coordonnées du noeud : " << xmin << " " << ymin << " " << xmax << " " << ymax << std::endl;
-}

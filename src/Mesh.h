@@ -82,9 +82,6 @@ struct Mesh{
         }
     }
     void moveVertices(int chartIndex, double deltaX, double deltaY){
-        std::cout<<"chartIndex: "<<chartIndex<<std::endl;
-        std::cout<<"deltaX: "<<deltaX<<", deltaY: "<<deltaY<<std::endl;
-        std::cout<<"charts[chartIndex].size(): "<<charts[chartIndex].size()<<std::endl;
         for(int i = 0; i<charts[chartIndex].size(); i++){
             textcoords[charts[chartIndex][i]] = uvCoord(textcoords[charts[chartIndex][i]][0]+deltaX,textcoords[charts[chartIndex][i]][1]+deltaY);
         }
@@ -124,10 +121,7 @@ struct Mesh{
         chartsBoundingBoxes =  boundingBoxes;
     }
 
-    double cutMeshText(int wbuffer, int hbuffer, int directionOfCut, int cutPositionPixel, bool test = false){
-        if(test){
-         std::cout<<"on rentre dans cutMeshText"<<std::endl;
-        }
+    double cutMeshText(int wbuffer, int hbuffer, int directionOfCut, int cutPositionPixel){
         double cutPosition;
         switch(directionOfCut){
             case 0: cutPosition = getXMin()+getWidth()*((double) cutPositionPixel/(double)wbuffer);
@@ -135,22 +129,15 @@ struct Mesh{
             case 1: cutPosition = getYMin()+getHeight()*((double)cutPositionPixel/(double)hbuffer);
                     break;
         }
-        if(test){
-         std::cout<<"cutPositon: "<<cutPosition<<std::endl;
-        }
         std::vector<std::vector<Triangle>> newChartsTriangles = std::vector<std::vector<Triangle>>();
         std::vector<std::vector<Triangle>> newChartsTriangles3D = std::vector<std::vector<Triangle>>();
         double cutLength = 0;
         for(int k = 0; k<chartsTriangles.size();k++){
-            if(test){
-             std::cout<<k<<" ème chart étudiée dans cutMeshText"<<std::endl;
-            }
             std::vector<Triangle> chartsTriangleLeft = std::vector<Triangle>();
             std::vector<Triangle> chartsTriangleRight = std::vector<Triangle>();
             std::vector<Triangle> chartsTriangleLeft3D = std::vector<Triangle>();
             std::vector<Triangle> chartsTriangleRight3D = std::vector<Triangle>();
             for(int i = 0; i<chartsTriangles[k].size(); i++){
-                //std::cout<<i<<" ème triangle du chart"<<std::endl;
                 int corner0 = chartsTriangles[k][i][0];
                 int corner1 = chartsTriangles[k][i][1];
                 int corner2 = chartsTriangles[k][i][2];
@@ -347,24 +334,15 @@ struct Mesh{
                 }
             }
             if(chartsTriangleLeft.size() ==  0 || chartsTriangleRight.size() == 0){
-                if(test){
-                    std::cout<<"on remet l'ancien chart"<<std::endl;
-                }
                 newChartsTriangles.push_back(chartsTriangles[k]);
                 newChartsTriangles3D.push_back(chartsTriangles3D[k]);
             }
             else{
-                if(test){
-                    std::cout<<"le chart est coupé en deux"<<std::endl;
-                }
                 newChartsTriangles.push_back(chartsTriangleLeft);
                 newChartsTriangles.push_back(chartsTriangleRight);
                 newChartsTriangles3D.push_back(chartsTriangleLeft3D);
                 newChartsTriangles3D.push_back(chartsTriangleRight3D);
             }
-        }
-        if(test){
-         std::cout<<"taille newChartsTriangles à la fin du cut: "<<newChartsTriangles.size()<<std::endl;
         }
         chartsTriangles = newChartsTriangles;
         chartsTriangles3D = newChartsTriangles3D;
@@ -407,13 +385,9 @@ struct Mesh{
         uvCoord newVertex = uvCoord(0.,0.);
         switch(directionOfCut){
             case 0: newVertex = uvCoord(cutPosition,coeff*(cutPosition-tA)+zA);
-                    /*textcoords.push_back(uvCoord(cutPosition,coeff*(cutPosition-tA)+zA));
-                    textcoords.push_back(uvCoord(cutPosition,coeff*(cutPosition-tA)+zA));*/
                     break;
 
             case 1: newVertex = uvCoord(coeff*(cutPosition-tA)+zA,cutPosition);
-                    /*textcoords.push_back(uvCoord(coeff*(cutPosition-tA)+zA,cutPosition));
-                    textcoords.push_back(uvCoord(coeff*(cutPosition-tA)+zA,cutPosition));*/
                     break;
         }
         textcoords.push_back(newVertex);
@@ -486,7 +460,6 @@ struct Mesh{
             float y2 = textcoords[p2][1];
             area += fabs(0.5*(x0*(y1-y2)+x1*(y2-y0)+x2*(y0-y1)));
         }
-        std::cout << "Aire trouvée " << area << std::endl;
         return area;
     }
 };

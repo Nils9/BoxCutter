@@ -71,27 +71,15 @@ public :
         w = newSize.width();
         h = newSize.height();
         mesh = copyMesh;
-        std::cout<<"w: "<<w<<std::endl;
-        std::cout<<"h: "<<h<<std::endl;
         std::vector<std::vector<QPoint>> emptyBoxes = locateVoidBoxes(w,h,300);
         voidBoxesImage.save("voidBoxesBis"+QString::number(iteration)+".jpg");
         std::vector<std::vector<int>> newCuts = optimizedCuts(h, w, emptyBoxes);
-        std::cout << "Nombre de cuts à analyser : " << newCuts.size() << " x2" << std::endl;
         std::vector<int> bCut = bestCut(newCuts, h, w);
-        std::cout<<"direction: "<<bCut[0]<<", minCut: "<<bCut[1]<<", maxCut: "<<bCut[2]<<std::endl;
-        mesh.cutMeshText(w,h,bCut[0],bCut[1],true);
+        mesh.cutMeshText(w,h,bCut[0],bCut[1]);
         mesh.updateChartsFromChartsTriangles();
-        mesh.cutMeshText(w,h,bCut[0],bCut[2],true);
+        mesh.cutMeshText(w,h,bCut[0],bCut[2]);
         mesh.updateChartsFromChartsTriangles();
-        std::vector<std::vector<double>> newRectangles = packRectangles(mesh, h, w, true);
-        std::cout << "fin du packing" << std::endl;
-        for(int i = 0; i < newRectangles.size(); i++){
-            double xmin = newRectangles[i][1];
-            double ymin = newRectangles[i][2];
-            double xmax = newRectangles[i][3];
-            double ymax = newRectangles[i][4];
-            std::cout << "xmin : " << xmin << "xmax : " << xmax << "ymin : " << ymin << "ymax : " << ymax << std::endl;
-        }
+        std::vector<std::vector<double>> newRectangles = packRectangles(mesh, h, w);
         moveCharts(w,h,newRectangles);
         if(uvMode){
             meshToUV();
@@ -247,7 +235,6 @@ public :
             }
         }
         //LOCATE LARGEST VOID BOXES
-        std::cout<<"emptyPixels.size(): "<<emptyPixels.size()<<std::endl;
         for(int i = 0; i<emptyPixels.size(); i++){
             QPoint p = emptyPixels[i];
             int upIndex = p.y();
@@ -287,7 +274,6 @@ public :
                 }
             } sizeIsBigger;
         std::sort(emptyBoxes.begin(),emptyBoxes.end(),sizeIsBigger);
-        std::cout<<"emptyBoxes.size() before filter overlap: "<<emptyBoxes.size()<<std::endl;
         //FILTER OVERLAPS
         int i = 0;
         while(i<emptyBoxes.size()-1){
@@ -303,13 +289,11 @@ public :
             }
             i++;
         }
-        std::cout<<"emptyBoxes.size() after filter overlap: "<<emptyBoxes.size()<<std::endl;
         //CREATE IMAGE
         voidBoxesImage = atlas.copy();
         for(int i = 0; i<emptyBoxes.size();i++){
             QPoint upLeft = emptyBoxes[i][0];
             QPoint lowRight = emptyBoxes[i][1];
-            std::cout<<"x: "<<upLeft.x()<<" y:"<<upLeft.y()<<" X:"<<lowRight.x()<<" Y:"<<lowRight.y()<<std::endl;
             for(int x = upLeft.x(); x<=lowRight.x(); x++){
                 for(int y = upLeft.y(); y<=lowRight.y(); y++){
                     voidBoxesImage.setPixelColor(x,y,QColor(0,0,0));
@@ -469,7 +453,7 @@ public :
         }
 
         //Cette fonction réalise le packing : elle prend en entrée des rectangles et les arrange
-        std::vector<std::vector<double>> packRectangles(Mesh currentMesh, int hbuffer, int wbuffer, bool test=false){
+        std::vector<std::vector<double>> packRectangles(Mesh currentMesh, int hbuffer, int wbuffer){
             std::vector<std::vector<double>> newRectangles;
             std::vector<std::vector<double>> sizes;
 
@@ -510,23 +494,15 @@ public :
 
             //On calcule la nouvelle place de chacun des rectangles grâce à l'arbre
             for(int i = 0; i < sizes.size(); i++){
-                //std::cout<<boundingBoxes[sizes[i][0]][0]<<" "<<boundingBoxes[sizes[i][0]][1]<<" "<<boundingBoxes[sizes[i][0]][2]<<" "<<boundingBoxes[sizes[i][0]][3]<<std::endl;
                 std::vector<double> newRectangle = packingTree->place(sizes[i]);
-                //std::cout<<"devient "<<newRectangle[1]<<" "<<newRectangle[2]<<" "<<newRectangle[3]<<" "<<newRectangle[4]<<std::endl;
                 if(newRectangle.empty()){
-                    std::cout << "La coupe n'est pas valable" << std::endl;
                     std::vector<std::vector<double>> nullVec;
                     return nullVec;
                 }
                 else{
                     newRectangles.push_back(newRectangle);
                 }
-            }
-            if(test){
-             std::cout<<"newRectangle.size() à la fin de packRectangles: "<<newRectangles.size()<<std::endl;
-            }
-            std::cout << "la coupe est valable" << std::endl;
-            return newRectangles;
+            }            return newRectangles;
         }
 
         //Après packing, calcul de la taille nécessaire pour la nouvelle image
@@ -560,26 +536,17 @@ public :
                 Mesh currentMeshH = mesh;
 
                 std::vector<int> currentCut = newCuts[i];
-                //packVerticalCut((double)currentCut[2]/(double)wbuffer, (double)currentCut[3]/(double)wbuffer, currentChartV);
-                //std::cout << "Taille des charts V après: " << currentChartV.size() << std::endl;
-                //packHorizontalCut((double)currentCut[0]/(double)hbuffer, (double)currentCut[1]/(double)hbuffer, currentChartH);
-                //std::cout << "Taille des charts H après: " << currentChartH.size() << std::endl;
 
                 //remplace les packHorizontalCut et packVerticalCut
                 double lV = 0;
                 lV += currentMeshV.cutMeshText(wbuffer,hbuffer,0,currentCut[2]);
                 lV += currentMeshV.cutMeshText(wbuffer,hbuffer,0,currentCut[3]);
                 currentMeshV.updateChartsFromChartsTriangles();
-                std::cout << "lV " << lV << std::endl;
 
                 double lH = 0;
                 lH += currentMeshH.cutMeshText(wbuffer,hbuffer,1,currentCut[0]);
                 lH += currentMeshH.cutMeshText(wbuffer,hbuffer,1,currentCut[1]);
                 currentMeshH.updateChartsFromChartsTriangles();
-                std::cout << "lH " << lH << std::endl;
-
-
-                std::cout<<"on passe à packRectangles dans bcut"<<std::endl;
 
                 std::vector<std::vector<double>> newRectanglesV = packRectangles(currentMeshV, hbuffer, wbuffer);
                 std::vector<std::vector<double>> newRectanglesH = packRectangles(currentMeshH, hbuffer, wbuffer);
@@ -588,44 +555,29 @@ public :
                     std::vector<double> sizeV = computeImageSize(newRectanglesV, hbuffer, wbuffer);
                     double packEffV = meshArea*100/(sizeV[0] * sizeV[1]);
                     double scoreV = packEffV/std::pow(lV, 0);
-                    std::cout << "Taille verticale : " << sizeV[0] << "x" << sizeV[1] << std::endl;
-                    std::cout << "Score V " << scoreV << std::endl;
                     if(scoreV > bestScore){
                         bestBoundingBox = i;
-                        std::cout << "Nouvelle meilleure coupe avec score de : " << scoreV << " et efficiency de " << packEffV << "%" << std::endl;
                         bestScore = scoreV;
                         orientation = 0;
                         min = newCuts[i][2];
                         max = newCuts[i][3];
-                        std::cout<<"min cut: "<<min<<std::endl;
-                        std::cout<<"max cut: "<<max<<std::endl;
                     }
                 }
                 if(not newRectanglesH.empty()){
                     std::vector<double> sizeH = computeImageSize(newRectanglesH, hbuffer, wbuffer);
                     double packEffH = meshArea*100/(sizeH[0] * sizeH[1]);
                     double scoreH = packEffH/std::pow(lH, 0);
-                    std::cout << "Score H " << scoreH << std::endl;
-                    std::cout << "Taille horizontale : " << sizeH[0] << "x" << sizeH[1] << std::endl;
-                    std::cout<<"newCuts["<<i<<"][0]: "<<newCuts[i][0]<<", newCuts["<<i<<"][1]: "<<newCuts[i][1]<<", newCuts["<<i<<"][2]: "<<newCuts[i][2]<<", newCuts["<<i<<"][3]: "<<newCuts[i][3]<<std::endl;
 
                     if(scoreH > bestScore){
                         bestBoundingBox = i;
-                        std::cout << "Nouvelle meilleure coupe avec score de : " << scoreH << " et efficiency de " << packEffH << "%" << std::endl;
                         bestScore = scoreH;
                         orientation = 1;
                         min = newCuts[i][0];
                         max = newCuts[i][1];
-                        std::cout<<"min cut courant: "<<min<<std::endl;
-                        std::cout<<"max cut courant: "<<max<<std::endl;
                     }
                 }
             }
-            std::cout<<"on choisit la Bounding Box "<<bestBoundingBox<<std::endl;
-            std::cout<<"orientation de la cut: "<<orientation<<std::endl;
-            std::cout<<"min cut final: "<<min<<std::endl;
-            std::cout<<"max cut final: "<<max<<std::endl;
-            std::cout<<"bestScore: "<<bestScore<<std::endl;
+            std::cout<<"packing efficincy: "<<bestScore<<std::endl;
             std::vector<int> bestCut;
 
             bestCut.push_back(orientation);
@@ -680,14 +632,12 @@ public :
                 examineVertex(k);
             }
         }
-        std::cout<<"nombre de charts du mesh: "<<mesh.charts.size()<<std::endl;
 
         for(int i = 0; i<mesh.triangles_text.size(); i++){
             int chartIndex = mesh.chartOfVertex[mesh.triangles_text[i][0]];
             mesh.chartsTriangles[chartIndex].push_back(mesh.triangles_text[i]);
             mesh.chartsTriangles3D[chartIndex].push_back(mesh.triangles[i]);
         }
-        std::cout<<"fin de computeMeshTextCharts"<<std::endl;
     }
 
     void examineVertex(int k){
@@ -710,13 +660,11 @@ public :
            mesh.updateBoundingBoxes();
            std::vector<std::vector<double>> oldBoxes = mesh.chartsBoundingBoxes;
            if((newChartsBoundingBoxes[i][3]-newChartsBoundingBoxes[i][1] > 0.99*oldBoxes[newChartsBoundingBoxes[i][0]][2]-oldBoxes[newChartsBoundingBoxes[i][0]][0])&& (newChartsBoundingBoxes[i][3]-newChartsBoundingBoxes[i][1] < 1.01*oldBoxes[newChartsBoundingBoxes[i][0]][2]-oldBoxes[newChartsBoundingBoxes[i][0]][0])){
-               std::cout<<"pas de rotation"<<std::endl;
                double moveX = newChartsBoundingBoxes[i][1]-oldBoxes[newChartsBoundingBoxes[i][0]][0];
                double moveY = newChartsBoundingBoxes[i][2]-oldBoxes[newChartsBoundingBoxes[i][0]][1];
                mesh.moveVertices(newChartsBoundingBoxes[i][0], moveX, moveY);
            }
            else{
-               std::cout<<"rotation"<<std::endl;
                double moveX = newChartsBoundingBoxes[i][1]-oldBoxes[newChartsBoundingBoxes[i][0]][1];
                double moveY = newChartsBoundingBoxes[i][2]-oldBoxes[newChartsBoundingBoxes[i][0]][0];
                mesh.invertXY(newChartsBoundingBoxes[i][0]);
@@ -779,7 +727,6 @@ public :
             glBegin(GL_TRIANGLES);
             double clr = 1./n;
             for(int i = 0; i < n; i++){
-                //glColor3f(clr*i,1-clr*i,clr*i);
                 if(i < 30){
                  glColor3f(RGB::color[i][0],RGB::color[i][1],RGB::color[i][2]);
                 }
@@ -787,11 +734,6 @@ public :
                   glColor3f(clr*i,1-clr*i,clr*i);
                 }
                 for( unsigned int t = 0 ; t < mesh.chartsTriangles3D[i].size() ; ++t ) {
-                    /*std::cout<<t<<" ème triangle à dessiner"<<std::endl;
-                    std::cout<<"mesh.chartsTriangles3D[i][t][0]: "<<mesh.chartsTriangles3D[i][t][0]<<std::endl;
-                    std::cout<<"mesh.chartsTriangles3D[i][t][1]: "<<mesh.chartsTriangles3D[i][t][1]<<std::endl;
-                    std::cout<<"mesh.chartsTriangles3D[i][t][2]: "<<mesh.chartsTriangles3D[i][t][2]<<std::endl;
-                    std::cout<<"mesh.vertices.size(): "<<mesh.vertices.size()<<std::endl;*/
                     point3d const & p0 = mesh.vertices[ mesh.chartsTriangles3D[i][t][0] ].p;
                     point3d const & p1 = mesh.vertices[ mesh.chartsTriangles3D[i][t][1] ].p;
                     point3d const & p2 = mesh.vertices[ mesh.chartsTriangles3D[i][t][2] ].p;
@@ -870,6 +812,8 @@ public :
         text += "<li>H   :   make this help appear</li>";
         text += "<li>Ctrl + mouse right button double click   :   choose background color</li>";
         text += "<li>Ctrl + T   :   change window title</li>";
+        text += "<li>M   :   switch between 3D mode and UV mode</li>";
+        text += "<li>B   :   start one iteration of our Box Cutter method</li>";
         text += "</ul>";
         return text;
     }
@@ -897,7 +841,6 @@ public :
         else if(event->key() == Qt::Key_M){
             if(uvMode){
                 mesh = copyMesh;
-                std::cout<<"mesh.vertices.size(): "<<mesh.vertices.size()<<std::endl;
                 point3d bb(FLT_MAX,FLT_MAX,FLT_MAX) , BB(-FLT_MAX,-FLT_MAX,-FLT_MAX);
                 for( unsigned int v = 0 ; v < mesh.vertices.size() ; ++v ) {
                     bb = point3d::min(bb , mesh.vertices[v]);
@@ -919,8 +862,6 @@ public :
                 adjustCamera(bb,BB);
                 update();
             }
-            /*update();
-            uvMode = !uvMode;*/
         }
 
         else if(event->key() == Qt::Key_B){
@@ -974,11 +915,6 @@ public slots:
                 std::cout << fileName.toStdString() << " was opened successfully" << std::endl;
 
                 computeMeshTextCharts();
-
-                std::cout<<"mesh.vertices.size(): "<<mesh.vertices.size()<<std::endl;
-                std::cout<<"mesh.textcoords.size(): "<<mesh.textcoords.size()<<std::endl;
-                std::cout<<"mesh.triangles.size(): "<<mesh.triangles.size()<<std::endl;
-                std::cout<<"mesh.triangles_text.size(): "<<mesh.triangles_text.size()<<std::endl;
                 }
 
                 point3d bb(FLT_MAX,FLT_MAX,FLT_MAX) , BB(-FLT_MAX,-FLT_MAX,-FLT_MAX);

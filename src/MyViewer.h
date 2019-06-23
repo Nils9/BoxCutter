@@ -31,9 +31,7 @@
 #include "qt/QSmartAction.h"
 
 #include "packingtree.h"
-#include "chart.h"
 #include "gl/BasicColors.h"
-#include "stb_image.h"
 
 class MyViewer : public QGLViewer , public QOpenGLFunctions_3_0
 {
@@ -51,8 +49,6 @@ class MyViewer : public QGLViewer , public QOpenGLFunctions_3_0
 
     QImage voidBoxesImage;
 
-    std::vector<Chart *> charts = std::vector<Chart *>();
-
     std::vector<std::vector<bool>> examinedPixels = std::vector<std::vector<bool>>();
 
     std::vector<std::vector<int>> chartOfPixels = std::vector<std::vector<int>>();
@@ -68,12 +64,8 @@ public :
         if(!uvMode){
          meshToUV();
         }
-        std::cout<<"mesh.Width(): "<<mesh.getWidth()<<std::endl;
-        std::cout<<"mesh.getHeight(): "<<mesh.getHeight()<<std::endl;
         int w = (int)(700*mesh.getWidth());
         int h = (int)(700*mesh.getHeight());
-        //int w = 700;
-        //int h = 700;
         renderGeometry(w, h);
         QSize newSize = resizeAtlas();
         w = newSize.width();
@@ -564,12 +556,6 @@ public :
             int bestBoundingBox = 0;
             double meshArea = mesh.getMeshArea();
             for(int i = 0; i < newCuts.size(); i++){
-                //std::cout<< "Traitement de la coupe : " << i << std::endl;
-                std::vector<Chart*> currentChartV = charts;
-                //std::cout << "Taille des charts V : " << currentChartV.size() << std::endl;
-                std::vector<Chart*> currentChartH = charts;
-                //std::cout << "Taille des charts H : " << currentChartH.size() << std::endl;
-
                 Mesh currentMeshV = mesh;
                 Mesh currentMeshH = mesh;
 
@@ -764,42 +750,6 @@ public :
         toolBar->addAction( saveCamera );
         toolBar->addAction( openCamera );
         toolBar->addAction( saveSnapShotPlusPlus );
-    }
-
-    GLuint loadTextureFromeFileToGPU(const std::string & filename){
-        int width, height, numComponents;
-
-        // Loading the image in CPU memoryusing stbd_image
-        unsigned char * data = stbi_load (filename.c_str (),
-                                          &width,
-                                          &height,
-                                          &numComponents, // 1 for a 8 bit greyscale image, 3 for 24bits RGB image
-                                          0);
-
-        // Create a texture in GPU memory
-        GLuint texID;
-        glGenTextures (1, &texID);
-        glBindTexture (GL_TEXTURE_2D, texID);
-        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        // Uploading the image data to GPU memory
-        glTexImage2D (GL_TEXTURE_2D, 0,
-                      (numComponents == 1 ? GL_RED : GL_RGB), // We assume only greyscale or RGB pixels
-                      width,
-                      height,
-                      0,
-                      (numComponents == 1 ? GL_RED : GL_RGB), // We assume only greyscale or RGB pixels
-                      GL_UNSIGNED_BYTE, data);
-       // Generating mipmaps for filtered texture fetch
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        // Freeing the now useless CPU memory
-        stbi_image_free(data);
-        glBindTexture (GL_TEXTURE_2D, 0);
-        return texID;
     }
 
 

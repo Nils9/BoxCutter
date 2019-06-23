@@ -17,15 +17,13 @@ HEADERS += ./src/point3.h \
     ./src/gl/BasicColors.h \
     src/bcutter.h \
     node.h \
-    packingtree.h \
-    chart.h
+    packingtree.h
 SOURCES += ./src/main.cpp \
     ./src/gl/GLUtilityMethods.cpp\
     ./src/gl/BasicColors.cpp \
     src/bcutter.cpp \
     node.cpp \
-    packingtree.cpp \
-    chart.cpp
+    packingtree.cpp
 
 
 

@@ -389,7 +389,6 @@ public :
                     if((currentLength <= bestLength) && currentLength >= 0){
                         bestLength = currentLength;
                         bestCut0 = i;
-                        std::cout<<"bestCut0 devient "<<i<<std::endl;
                     }
                 }
             }
@@ -487,7 +486,6 @@ public :
                 size.push_back(width*height);
                 size.push_back(std::max(width, height));
                 size.push_back(std::min(width, height));
-                std::cout<<"size[0] dans packRectangles: "<<size[0]<<std::endl;
                 sizes.push_back(size);
             }
 
@@ -519,101 +517,6 @@ public :
             }
             return newRectangles;
         }
-
-        //Cette fonction calcule les coordonnées des rectangles nés d'une coupe horizontale
-        /*void packVerticalCut(double x1, double x2, std::vector<Chart*> & charts, bool test = false){ //attention y1 et y2 doivent être les coordonnées de la cut exactes !!
-            if(test){
-                std::cout<<"Nombre de chart avant le packVerticalCut: "<<charts.size()<<std::endl;
-                std::cout<<"x1 dans packVerticalCut: "<<i1<<std::endl;
-                std::cout<<"x2 dans packVerticalCut: "<<i2<<std::endl;
-            }            
-            std::vector<QPoint> bB;
-            std::vector<Chart*> newCharts;
-            for(int i = 0; i < charts.size(); i++){
-                bB = charts[i]->getBoundingBox();
-                std::vector<Chart*> sons;
-                int xmin = bB[0].x();
-                int xmax = bB[1].x();
-                if(test){
-                    std::cout<<"xmin pour la "<<i<<" ème chart: "<<xmin<<std::endl;
-                    std::cout<<"xmax pour la "<<i<<" ème chart: "<<xmax<<std::endl;
-                }
-                if(xmax >= x2 && xmin <= x1){
-                    sons = charts[i]->splitChart(x1, x2, 0);
-                    if(test){std::cout << "J'ajoute des fils dans la cond1 : " << sons.size() << std::endl;}
-                    for(int i = 0; i < sons.size(); i++){
-                        newCharts.push_back(sons[i]);
-                    }
-                }
-                else if(xmin <= x1 && x1 <= xmax){
-                    sons = charts[i]->splitChart(xmin, x1, 0);
-                    if(test){std::cout << "J'ajoute des fils dans la cond2: " << sons.size() << std::endl;}
-                    for(int i = 0; i < sons.size(); i++){
-                        newCharts.push_back(sons[i]);
-                    }
-                }
-                else if(xmin <= x2 && x2 <= xmax){
-                    sons = charts[i]->splitChart(xmin, x2, 0);
-                    if(test){std::cout << "J'ajoute des fils dans la cond3: " << sons.size() << std::endl;}
-                    for(int i = 0; i < sons.size(); i++){
-                        newCharts.push_back(sons[i]);
-                    }
-                }
-                else{
-                    newCharts.push_back(charts[i]);
-                }
-            }
-            charts = newCharts;
-            if(test){std::cout<<"Nombre de chart après le packVerticalCut: "<<charts.size()<<std::endl;}
-
-        }*/
-
-        //Cette fonction calcule les coordonnées des rectangles nés d'une coupe verticale
-        /*void packHorizontalCut(int y1, int y2, std::vector<Chart*> & charts, bool test = false){ //attention x1 et x2 doivent être les coordonnées de la cut exactes !!
-            if(test){
-                std::cout<<"Nombre de chart avant le packHorizontalCut: "<<charts.size()<<std::endl;
-                std::cout<<"y1 dans packVerticalCut: "<<y1<<std::endl;
-                std::cout<<"y2 dans packVerticalCut: "<<y2<<std::endl;
-            }
-            std::vector<QPoint> bB;
-            std::vector<Chart*> newCharts;
-            for(int i = 0; i < charts.size(); i++){
-                bB = charts[i]->getBoundingBox();
-                std::vector<Chart*> sons;
-                int ymin = bB[0].y();
-                int ymax = bB[1].y();
-                if(test){
-                    std::cout<<"ymin pour la "<<i<<" ème chart: "<<ymin<<std::endl;
-                    std::cout<<"ymax pour la "<<i<<" ème chart: "<<ymax<<std::endl;
-                }
-                if(ymax >= y2 && ymin <= y1){
-                    sons = charts[i]->splitChart(y1, y2, 1);
-                    if(test){std::cout << "J'ajoute des fils dans la cond1 : " << sons.size() << std::endl;}
-                    for(int i = 0; i < sons.size(); i++){
-                        newCharts.push_back(sons[i]);
-                    }
-                }
-                else if(ymin <= y1 && y1 <= ymax){
-                    sons = charts[i]->splitChart(ymin, y1, 1);
-                    if(test){std::cout << "J'ajoute des fils dans la cond2 : " << sons.size() << std::endl;}
-                    for(int i = 0; i < sons.size(); i++){
-                        newCharts.push_back(sons[i]);
-                    }
-                }
-                else if(ymin <= y2 && y2 <= ymax){
-                    sons = charts[i]->splitChart(ymin, y2, 1);
-                    if(test){std::cout << "J'ajoute des fils dans la cond3 : " << sons.size() << std::endl;}
-                    for(int i = 0; i < sons.size(); i++){
-                        newCharts.push_back(sons[i]);
-                    }
-                }
-                else{
-                    newCharts.push_back(charts[i]);
-                }
-            }
-            charts = newCharts;
-            if(test){std::cout<<"charts.size() à la fin de packHorizontalCut: "<<charts.size()<<std::endl;}
-        }*/
 
         //Après packing, calcul de la taille nécessaire pour la nouvelle image
         std::vector<double> computeImageSize(std::vector<std::vector<double>> rectangles, int hbuffer, int wbuffer){
@@ -972,9 +875,7 @@ public :
             }
         }
         else if(event->key() == Qt::Key_M){
-            std::cout<<"M pressed"<<std::endl;
             if(uvMode){
-                std::cout<<"déjà en uv"<<std::endl;
                 mesh = copyMesh;
                 std::cout<<"mesh.vertices.size(): "<<mesh.vertices.size()<<std::endl;
                 point3d bb(FLT_MAX,FLT_MAX,FLT_MAX) , BB(-FLT_MAX,-FLT_MAX,-FLT_MAX);
@@ -988,7 +889,6 @@ public :
 
             }
             else{
-                std::cout<<"on va passer en uv"<<std::endl;
                 uvMode = true;
                 meshToUV();
                 point3d bb(FLT_MAX,FLT_MAX,FLT_MAX) , BB(-FLT_MAX,-FLT_MAX,-FLT_MAX);

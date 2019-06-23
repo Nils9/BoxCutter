@@ -68,8 +68,6 @@ public :
         if(!uvMode){
          meshToUV();
         }
-        std::cout<<"mesh.Width(): "<<mesh.getWidth()<<std::endl;
-        std::cout<<"mesh.getHeight(): "<<mesh.getHeight()<<std::endl;
         int w = (int)(700*mesh.getWidth());
         int h = (int)(700*mesh.getHeight());
         //int w = 700;
